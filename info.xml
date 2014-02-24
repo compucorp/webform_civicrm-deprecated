@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<extension key="com.greg.membersonlyevent" type="module">
+  <file>membersonlyevent</file>
+  <name>Private/Members only events</name>
+  <description>Private/Members Only Event functionality</description>
+  <license>AGPL-3.0</license>
+  <maintainer>
+    <author>Greg Meszaros</author>
+    <email>meszaros275@gmail.com</email>
+  </maintainer>
+  <releaseDate>2014-02-22</releaseDate>
+  <version>1.0</version>
+  <develStage>alpha</develStage>
+  <compatibility>
+    <ver>4.2</ver>
+  </compatibility>
+  <comments>This is a new, undeveloped module</comments>
+  <civix>
+    <namespace>CRM/Membersonlyevent</namespace>
+  </civix>
+</extension>
