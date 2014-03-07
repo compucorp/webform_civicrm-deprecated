@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/event/manage/membersonlyevent</path>
+    <page_callback>CRM_Membersonlyevent_Form_MembersOnlyEvent</page_callback>
+    <title>MembersOnlyEvent</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>
