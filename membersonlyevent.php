@@ -120,6 +120,39 @@ function membersonlyevent_civicrm_permission(&$permissions) {
   
 }
 
+function membersonlyevent_civicrm_tabset($tabsetName, &$tabs, $context) {
+  //check if the tab set is Event manage
+  if ($tabsetName == 'civicrm/event/manage') {
+    if (!empty($context)) {
+      $eventID = $context['event_id'];
+      $url = CRM_Utils_System::url( 'civicrm/event/manage/membersonlyevent',
+        "reset=1&snippet=5&force=1&id=$eventID&action=update&component=event" );
+    //add a new Volunteer tab along with url
+     $tab['membersonlyevent'] = array(
+        'title' => ts('Members only event settings'),
+        'link' => $url,
+        'valid' => 1,
+        'active' => 1,
+        'current' => false,
+      );
+    }
+    else {
+      $tab['membersonlyevent'] = array(
+      'title' => ts('Members only event settings'),
+        'url' => 'civicrm/event/manage/membersonlyevent',
+      );
+    }
+ 
+  //Insert this tab into position 4 
+ 
+  $tabs = array_merge(
+      array_slice($tabs, 0, 4),
+      $tab,
+      array_slice($tabs, 4)
+    );
+  }
+}
+
 /**
  * Alter the event registration and check for the correct permissions.
  */

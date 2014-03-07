@@ -9,13 +9,15 @@ require_once 'CRM/Core/Form.php';
  */
 class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEvent {
   function buildQuickForm() {
-
+   
+      $data = new CRM_Membersonlyevent_DAO_MembersOnlyEvent();
+      //print_r($data); die();
     // add form elements
     $this->add(
-      'select', // field type
-      'favorite_color', // field name
-      'Favorite Color', // field label
-      $this->getColorOptions(), // list of options
+      'checkbox', // field type
+      'is_members_only_event', // field name
+      'Members only event?', // field label
+      '',   // list of options
       true // is required
     );
     $this->addButtons(array(
@@ -32,26 +34,19 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
   }
 
   function postProcess() {
-    $values = $this->exportValues();
-    $options = $this->getColorOptions();
-    CRM_Core_Session::setStatus(ts('You picked color "%1"', array(
-      1 => $options[$values['favorite_color']]
-    )));
+    $passed_values = $this->exportValues();
+    $insert = new CRM_Membersonlyevent_BAO_MembersOnlyEvent();
+    $params = array();
+    // $params['id// this is members only event ID'] --> check if available, do a retrieve query when the event is edited and pass it as hidden value with post
+    // if not available then insert, else edit
+    
+    //$params['is_members_only_event'] = $passed_values['is_members_only_event'];
+    $params['event_id'] = $passed_values['id'];
+    $params['contribution_page_id'] = NULL;
+    
+    $insert->create($params);
+    
     parent::postProcess();
-  }
-
-  function getColorOptions() {
-    $options = array(
-      '' => ts('- select -'),
-      '#f00' => ts('Red'),
-      '#0f0' => ts('Green'),
-      '#00f' => ts('Blue'),
-      '#f0f' => ts('Purple'),
-    );
-    foreach (array('1','2','3','4','5','6','7','8','9','a','b','c','d','e') as $f) {
-      $options["#{$f}{$f}{$f}"] = ts('Grey (%1)', array(1 => $f));
-    }
-    return $options;
   }
 
   /**

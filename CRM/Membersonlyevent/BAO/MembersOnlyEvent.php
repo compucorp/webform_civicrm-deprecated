@@ -8,6 +8,7 @@ class CRM_Membersonlyevent_BAO_MembersOnlyEvent extends CRM_Membersonlyevent_DAO
    * @param array $params key-value pairs
    * @return CRM_Membersonlyevent_DAO_MembersOnlyEvent|NULL
    *
+   */
   public static function create($params) {
     $className = 'CRM_Membersonlyevent_DAO_MembersOnlyEvent';
     $entityName = 'MembersOnlyEvent';
@@ -20,5 +21,5 @@ class CRM_Membersonlyevent_BAO_MembersOnlyEvent extends CRM_Membersonlyevent_DAO
     CRM_Utils_Hook::post($hook, $entityName, $instance->id, $instance);
 
     return $instance;
-  } */
+  }
 }
