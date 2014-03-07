@@ -154,6 +154,102 @@ function membersonlyevent_civicrm_tabset($tabsetName, &$tabs, $context) {
 }
 
 /**
+ * Implementation of hook_civicrm_pageRun
+ *
+ * Handler for pageRun hook.
+ */
+function membersonlyevent_civicrm_pageRun(&$page) {
+  $f = '_' . __FUNCTION__ . '_' . get_class($page);
+  if (function_exists($f)) {
+    $f($page);
+  }
+}
+
+/**
+ * Callback for event info page
+ *
+ * Inserts "Login Now and the Membership Signup buttons to the event page"
+ * 
+ */
+function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
+  $params = array(
+    'event_id' => $page->_id,
+  );
+  
+  $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::retrieve($params);
+  $members_only_event = array_shift($members_only_event);
+  
+  // Hide register now button, if the event is members only event and user has no permissions to register for the event
+  if ($members_only_event->is_members_only_event == 1) {
+    if (!CRM_Core_Permission::check('members only event registration')) {
+        
+      CRM_Core_Region::instance('event-page-eventinfo-actionlinks-top')->update('default', array(
+        'disabled' => TRUE,
+      ));
+      
+      CRM_Core_Region::instance('event-page-eventinfo-actionlinks-bottom')->update('default', array(
+        'disabled' => TRUE,
+      ));
+      
+      $session = CRM_Core_Session::singleton();
+      $userID = $session->get('userID');
+      if (!$userID) {
+        $url = CRM_Utils_System::url('user/login', '',
+          //array('reset' => 1, 'id' => $members_only_event->contribution_page_id),
+          FALSE, // absolute?
+          NULL, // fragment
+          TRUE, // htmlize?
+          TRUE // is frontend?
+        );
+        
+        $button_text = ts('Existing private members log in to register');
+
+        $snippet = array(
+          'template' => 'CRM/Event/Page/members-event-button.tpl',
+          'button_text' => $button_text,
+          'position' => 'top',
+          'url' => $url,
+          'weight' => -10,
+        );
+       
+        CRM_Core_Region::instance('event-page-eventinfo-actionlinks-top')->add($snippet);
+
+        $snippet['position'] = 'bottom';
+        $snippet['weight'] = 5;
+        
+        CRM_Core_Region::instance('event-page-eventinfo-actionlinks-bottom')->add($snippet);
+          
+      }
+      
+      $url = CRM_Utils_System::url('civicrm/contribute/transact',
+        array('reset' => 1, 'id' => $members_only_event->contribution_page_id),
+        FALSE, // absolute?
+        NULL, // fragment
+        TRUE, // htmlize?
+        TRUE // is frontend?
+      );
+      $button_text = ts('Become a private member to register for this event');
+
+      $snippet = array(
+        'template' => 'CRM/Event/Page/members-event-button.tpl',
+        'button_text' => $button_text,
+        'position' => 'top',
+        'url' => $url,
+        'weight' => -10,
+      );
+      
+      CRM_Core_Region::instance('event-page-eventinfo-actionlinks-top')->add($snippet);
+
+      $snippet['position'] = 'bottom';
+      $snippet['weight'] = 10;
+           
+      CRM_Core_Region::instance('event-page-eventinfo-actionlinks-bottom')->add($snippet);
+      
+    }
+  }
+}
+
+/**
  * Alter the event registration and check for the correct permissions.
  */
 function membersonlyevent_civicrm_alterContent(&$content, $context, $tplName, &$object) {
@@ -163,23 +259,13 @@ function membersonlyevent_civicrm_alterContent(&$content, $context, $tplName, &$
    
   if($tplName == "CRM/Event/Form/Registration/Register.tpl" && $context == "form") {
       
-    global $user;
-  
-    require_once 'CRM/Core/BAO/CustomField.php';
-    require_once 'CRM/Core/BAO/CustomValueTable.php';
-    
-    // Get the custom field ID
-    $customFieldID = CRM_Core_BAO_CustomField::getCustomFieldID('Members_only_Event', 'Private_Members_settings');
-    
-    // Check for the custom field value
-    $values = CRM_Core_BAO_CustomValueTable::getEntityValues($_GET['id'], '', array($customFieldID));
     
     // This value equals 1 -> if the EVENT is for "private members only"
-    $private_event = (string) array_shift($values);
+    $private_event = TRUE;
     
     if ($private_event == TRUE) {
-        
-      if (!user_access('members only event registration')) {
+       
+      if (!CRM_Core_Permission::check('members only event registration')) {
         $content = "<p>You are not allowed to register for this event!</p>";      
       }
       

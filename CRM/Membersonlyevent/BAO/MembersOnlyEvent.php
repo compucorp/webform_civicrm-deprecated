@@ -22,4 +22,27 @@ class CRM_Membersonlyevent_BAO_MembersOnlyEvent extends CRM_Membersonlyevent_DAO
 
     return $instance;
   }
+  
+  /**
+   * Get a list of Members Only Events matching the params, where params keys are column
+   * names of civicrm_membersonlyevent.
+   *
+   * @param array $params
+   * @return array of CRM_Membersonlyevent_BAO_MembersOnlyEvent objects
+   */
+  public static function retrieve(array $params) {
+    $result = array();
+
+    $project = new CRM_Membersonlyevent_BAO_MembersOnlyEvent();
+    $project->copyValues($params);
+    $project->find();
+
+    while ($project->fetch()) {
+      $result[(int) $project->id] = clone $project;
+    }
+
+    $project->free();
+
+    return $result;
+  }
 }
