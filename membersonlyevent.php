@@ -202,7 +202,7 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
           TRUE // is frontend?
         );
         
-        $button_text = ts('Existing private members log in to register');
+        $button_text = ts('Log in to register');
 
         $snippet = array(
           'template' => 'CRM/Event/Page/members-event-button.tpl',
@@ -228,7 +228,7 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
         TRUE, // htmlize?
         TRUE // is frontend?
       );
-      $button_text = ts('Become a private member to register for this event');
+      $button_text = ts('Become a member to register for this event');
 
       $snippet = array(
         'template' => 'CRM/Event/Page/members-event-button.tpl',
