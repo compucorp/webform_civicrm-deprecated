@@ -14,7 +14,7 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
     $this->add(
       'checkbox', // field type
       'is_members_only_event', // field name
-      'Is members only event?', // field label
+      ts('Is members only event?'), // field label
       '',   // list of attributes
       false // is required
     );
@@ -23,7 +23,7 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
     $this->add(
       'select', // field type
       'contribution_page_id', // field name
-      'Contribution page used for membership signup', // field label
+      ts('Contribution page used for membership signup'), // field label
       $this->getContributionPagesAsOptions(),   // list of attributes
       false // is required
     );
