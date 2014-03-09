@@ -121,13 +121,16 @@ function membersonlyevent_civicrm_permission(&$permissions) {
 }
 
 function membersonlyevent_civicrm_tabset($tabsetName, &$tabs, $context) {
-  //check if the tab set is Event manage
+    
+  // Check if the tab set is Event manage
   if ($tabsetName == 'civicrm/event/manage') {
     if (!empty($context)) {
+        
       $eventID = $context['event_id'];
       $url = CRM_Utils_System::url( 'civicrm/event/manage/membersonlyevent',
         "reset=1&snippet=5&force=1&id=$eventID&action=update&component=event" );
-    //add a new Volunteer tab along with url
+      
+     // Add a new Members only event tab along with url
      $tab['membersonlyevent'] = array(
         'title' => ts('Members only event settings'),
         'link' => $url,
@@ -143,9 +146,8 @@ function membersonlyevent_civicrm_tabset($tabsetName, &$tabs, $context) {
       );
     }
  
-  //Insert this tab into position 4 
- 
-  $tabs = array_merge(
+    //Insert this tab into position 4
+    $tabs = array_merge(
       array_slice($tabs, 0, 4),
       $tab,
       array_slice($tabs, 4)
@@ -172,12 +174,9 @@ function membersonlyevent_civicrm_pageRun(&$page) {
  * 
  */
 function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
-  $params = array(
-    'event_id' => $page->_id,
-  );
   
-  $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::retrieve($params);
-  $members_only_event = array_shift($members_only_event);
+  // Search for the Members Only Event object by the Event ID
+  $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($page->_id);
   
   // Hide register now button, if the event is members only event and user has no permissions to register for the event
   if ($members_only_event->is_members_only_event == 1) {
@@ -193,6 +192,7 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
       
       $session = CRM_Core_Session::singleton();
       $userID = $session->get('userID');
+      
       if (!$userID) {
         $url = CRM_Utils_System::url('user/login', '',
           //array('reset' => 1, 'id' => $members_only_event->contribution_page_id),
@@ -215,7 +215,7 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
         CRM_Core_Region::instance('event-page-eventinfo-actionlinks-top')->add($snippet);
 
         $snippet['position'] = 'bottom';
-        $snippet['weight'] = 5;
+        $snippet['weight'] = -10;
         
         CRM_Core_Region::instance('event-page-eventinfo-actionlinks-bottom')->add($snippet);
           
@@ -241,7 +241,7 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
       CRM_Core_Region::instance('event-page-eventinfo-actionlinks-top')->add($snippet);
 
       $snippet['position'] = 'bottom';
-      $snippet['weight'] = 10;
+      $snippet['weight'] = -10;
            
       CRM_Core_Region::instance('event-page-eventinfo-actionlinks-bottom')->add($snippet);
       
@@ -259,14 +259,13 @@ function membersonlyevent_civicrm_alterContent(&$content, $context, $tplName, &$
    
   if($tplName == "CRM/Event/Form/Registration/Register.tpl" && $context == "form") {
       
-    
-    // This value equals 1 -> if the EVENT is for "private members only"
-    $private_event = TRUE;
-    
-    if ($private_event == TRUE) {
+    // Search for the Members Only Event object by the Event ID
+    $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($_GET['id']);
+          
+    if ($members_only_event->is_members_only_event == 1) {
        
       if (!CRM_Core_Permission::check('members only event registration')) {
-        $content = "<p>You are not allowed to register for this event!</p>";      
+        $content = ts('<p>You are not allowed to register for this event!</p>');      
       }
       
     }

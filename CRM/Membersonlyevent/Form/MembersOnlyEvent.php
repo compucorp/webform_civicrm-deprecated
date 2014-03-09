@@ -50,19 +50,14 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
       
     $defaults = array();
     
-    // Check for default values if any set defaults
-    $BAO = new CRM_Membersonlyevent_BAO_MembersOnlyEvent();
-    $params = array();
-    $params['event_id'] = $this->_id;
+    // Search for the Members Only Event object by the Event ID
+    $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($this->_id);
     
-    $query = $BAO->retrieve($params);
+    if(is_object($members_only_event)) {
     
-    if(count($query) > 0) {
-      // If we have the ID, edit operation will fire
-      $params['id'] = key($query);
-      
-      $defaults['is_members_only_event'] = $query[$params['id']]->is_members_only_event;
-      $defaults['contribution_page_id'] = $query[$params['id']]->contribution_page_id;
+      $defaults['is_members_only_event'] = $members_only_event->is_members_only_event;
+      $defaults['contribution_page_id'] = $members_only_event->contribution_page_id;
+    
     }
     
     return $defaults;
@@ -85,21 +80,20 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
   function postProcess() {
     $passed_values = $this->exportValues();
     
-    $BAO = new CRM_Membersonlyevent_BAO_MembersOnlyEvent();
-    $params = array();
-    $params['event_id'] = $passed_values['id'];
+    // Search for the Members Only Event object by the Event ID
+    $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($passed_values['id']);
     
-    $query = $BAO->retrieve($params);
-    
-    if(count($query) > 0) {
+    if(is_object($members_only_event)) {
       // If we have the ID, edit operation will fire
-      $params['id'] = key($query);
+      $params['id'] = $members_only_event->id;
     }
     
+    $params['event_id'] = $passed_values['id'];
     $params['contribution_page_id'] = $passed_values['contribution_page_id'];
     $params['is_members_only_event'] = isset($passed_values['is_members_only_event']) ? $passed_values['is_members_only_event'] : 0;
-        
-    $BAO->create($params);
+    
+    // Create or edit the values
+    CRM_Membersonlyevent_BAO_MembersOnlyEvent::create($params);
     
     parent::postProcess();
   }

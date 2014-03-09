@@ -45,4 +45,24 @@ class CRM_Membersonlyevent_BAO_MembersOnlyEvent extends CRM_Membersonlyevent_DAO
 
     return $result;
   }
+  
+  /**
+   * Return the MembersOnlyEvent object for the specified Event by Event ID
+   * @param type $event_id
+   * @return MembersOnlyEvent object, FALSE otherwise
+   */
+  public static function getMembersOnlyEvent($event_id = NULL) {
+    if ($event_id == NULL) {
+      return FALSE;
+    }
+    
+    $params = array(
+      'event_id' => $event_id,
+    );
+  
+    $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::retrieve($params);
+    $members_only_event = array_shift($members_only_event);
+    
+    return $members_only_event;
+  }
 }
