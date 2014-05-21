@@ -178,6 +178,14 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
   // Search for the Members Only Event object by the Event ID
   $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($page->_id);
   
+  // Get the current user ID and current event ID
+  $session = CRM_Core_Session::singleton();
+  $userID = $session->get('userID');
+  if(is_object($members_only_event)){
+  	$currentEventID = $page->_id;
+	  
+  }
+  
   // Hide register now button, if the event is members only event and user has no permissions to register for the event
   if (is_object($members_only_event) && $members_only_event->is_members_only_event == 1) {
     if (!CRM_Core_Permission::check('members only event registration')) {
@@ -189,9 +197,6 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
       CRM_Core_Region::instance('event-page-eventinfo-actionlinks-bottom')->update('default', array(
         'disabled' => TRUE,
       ));
-      
-      $session = CRM_Core_Session::singleton();
-      $userID = $session->get('userID');
       
       if (!$userID) {
         $url = CRM_Utils_System::url('user/login', '',
@@ -245,7 +250,9 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
            
       CRM_Core_Region::instance('event-page-eventinfo-actionlinks-bottom')->add($snippet);
       
-    }
+    }//else if(){
+    	
+    //}
   }
 }
 
@@ -270,5 +277,31 @@ function membersonlyevent_civicrm_alterContent(&$content, $context, $tplName, &$
       
     }
     
+  }
+}
+
+function membersonlyevent_civicrm_navigationMenu( &$params ) {
+
+  // get the id of Administer Menu
+  $administerMenuId = CRM_Core_DAO::getFieldValue('CRM_Core_BAO_Navigation', 'Administer', 'id', 'name');
+  // skip adding menu if there is no administer menu
+  if ($administerMenuId) {
+    // get the maximum key under administer menu
+    $maxAdminMenuKey = max( array_keys($params[$administerMenuId]['child']));
+    $nextAdminMenuKey = $maxAdminMenuKey+1;
+    $params[$administerMenuId]['child'][$nextAdminMenuKey] =  array(
+        'attributes' => array(
+          'label' => ts('Members Event'),
+          'name' => 'members_event',
+          'url' => 'civicrm/admin/setting/preferences/members_event_config&reset=1',
+          'permission' => null,
+          'operator' => null,
+          'separator' => 1,
+          'parentID' => $administerMenuId,
+          'navID' => $nextAdminMenuKey,
+          'active' => 1
+        ),
+        'child' => null
+	);
   }
 }
