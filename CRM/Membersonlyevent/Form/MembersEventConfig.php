@@ -14,8 +14,8 @@ class CRM_Membersonlyevent_Form_MembersEventConfig extends CRM_Core_Form {
     parent::preProcess();
     CRM_Utils_System::setTitle(ts('Settings - Members Only Event Configuration'));
 
-	//$configValue = CRM_Booking_BAO_BookingConfig::getConfig();
-	//$this->_config = $configValue;
+	$configValue = CRM_Membersonlyevent_BAO_MembershipConfig::getConfig();
+	$this->_config = $configValue;
 
   }
   
@@ -40,10 +40,29 @@ class CRM_Membersonlyevent_Form_MembersEventConfig extends CRM_Core_Form {
     parent::buildQuickForm();
   }
 
+  function setDefaultValues() {
+  	$defaults = array();
+  	$defaults['check_duration'] = $this->_config['duration_check'];
+	
+	return $defaults;
+  }
+
   function postProcess() {
   	CRM_Utils_System::flushCache();
     $values = $this->exportValues();
-    parent::postProcess();
+	$params['id'] = $this->_config['id'];
+	if(isset($values['check_duration'])){
+	  $params['duration_check'] = $values['check_duration'];
+	}else{
+	  $params['duration_check'] = 0;
+	}
+	// submit to BAO for updating
+	  $set = CRM_Membersonlyevent_BAO_MembershipConfig::create($params);
+
+	  //$url = CRM_Utils_System::url('civicrm/admin/setting/preferences/members_event_config', 'reset=1');
+	  // show message
+	  CRM_Core_Session::setStatus(ts('The member event configuration has been saved.'), ts('Saved'), 'success');
+    //parent::postProcess();
   }
 
   /**
