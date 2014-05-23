@@ -6,4 +6,10 @@
     <title>MembersOnlyEvent</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/admin/setting/preferences/members_event_config</path>
+    <page_callback>CRM_Membersonlyevent_Form_MembersEventConfig</page_callback>
+    <title>MembersEventConfig</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>
