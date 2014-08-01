@@ -65,7 +65,8 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
   
   function getContributionPagesAsOptions() {
       
-    $contribution_pages = CRM_Contribute_BAO_ContributionPage::commonRetrieveAll('CRM_Contribute_DAO_ContributionPage');
+    $results = civicrm_api3('ContributionPage', 'get', array('sequential' => 1));
+    $contribution_pages = $results['values'];
     
     $return_array = array();
     $return_array['NULL'] = ts('- Select contribution page -');
@@ -81,21 +82,21 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
     $passed_values = $this->exportValues();
     
     // Search for the Members Only Event object by the Event ID
-    $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($passed_values['id']);
+    $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($this->_id);
     
     if(is_object($members_only_event)) {
       // If we have the ID, edit operation will fire
       $params['id'] = $members_only_event->id;
     }
     
-    $params['event_id'] = $passed_values['id'];
+    $params['event_id'] = $this->_id;
     $params['contribution_page_id'] = $passed_values['contribution_page_id'];
     $params['is_members_only_event'] = isset($passed_values['is_members_only_event']) ? $passed_values['is_members_only_event'] : 0;
     
     // Create or edit the values
     CRM_Membersonlyevent_BAO_MembersOnlyEvent::create($params);
     
-    parent::postProcess();
+    parent::endPostProcess();
   }
 
   /**

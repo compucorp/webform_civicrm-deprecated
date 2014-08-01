@@ -1,4 +1,6 @@
 {* Check if the online registration for this event is allowed, show notification message otherwise *}
+<div class="crm-block crm-form-block crm-event-manage-membersonlyevent-form-block">
+
 {if $isOnlineRegistration == 1}
   {* HEADER *}
 
@@ -15,6 +17,8 @@
       <div class="clear"></div>
     </div>
   {/foreach}
+
+</div>
 
   {* FOOTER *}
 

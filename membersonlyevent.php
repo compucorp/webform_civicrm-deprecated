@@ -134,9 +134,9 @@ function membersonlyevent_civicrm_tabset($tabsetName, &$tabs, $context) {
      $tab['membersonlyevent'] = array(
         'title' => ts('Members only event settings'),
         'link' => $url,
-        'valid' => 1,
-        'active' => 1,
-        'current' => false,
+        'valid' => FALSE,
+        'active' => TRUE,
+        'current' => FALSE,
       );
     }
     else {
@@ -146,6 +146,26 @@ function membersonlyevent_civicrm_tabset($tabsetName, &$tabs, $context) {
       );
     }
  
+    if (isset($context['event_id'])) {
+    	
+	  $eventID = $context['event_id'];
+
+      // disable tabs based on their configuration status
+      $sql = "
+			SELECT     e.is_online_registration, cm.is_members_only_event
+			FROM       civicrm_event e
+			LEFT JOIN  civicrm_membersonlyevent cm ON cm.event_id = e.id
+			WHERE      e.id = %1
+	  ";
+      $params = array(1 => array($eventID, 'Integer'));
+      $dao = CRM_Core_DAO::executeQuery($sql, $params);
+      if (!$dao->fetch()) {
+        CRM_Core_Error::fatal();
+      }
+      if ($dao->is_online_registration&&$dao->is_members_only_event) {
+        $tab['membersonlyevent']['valid'] = TRUE;
+      }
+	}
     //Insert this tab into position 4
     $tabs = array_merge(
       array_slice($tabs, 0, 4),
@@ -318,7 +338,7 @@ function membersonlyevent_civicrm_navigationMenu( &$params ) {
         'attributes' => array(
           'label' => ts('Members Event'),
           'name' => 'members_event',
-          'url' => 'civicrm/admin/setting/preferences/members_event_config&reset=1',
+          'url' => 'civicrm/admin/setting/preferences/members_event_config?reset=1',
           'permission' => null,
           'operator' => null,
           'separator' => 1,
