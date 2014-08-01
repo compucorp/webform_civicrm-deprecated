@@ -96,7 +96,8 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
     // Create or edit the values
     CRM_Membersonlyevent_BAO_MembersOnlyEvent::create($params);
     
-    parent::endPostProcess();
+    //need recheck
+    parent::postProcess();
   }
 
   /**
