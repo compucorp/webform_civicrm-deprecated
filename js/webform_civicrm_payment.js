@@ -61,11 +61,20 @@ cj(function($) {
       '</tr>');
     }
     else {
-      var taxString = $lineItem.html().split('%')[1];
-      var taxCode = taxString.split(')')[0];
-      var taxRate = 1 + (taxCode /100);console.log(taxRate);
-      $('td+td', $lineItem).html(CRM.formatMoney(amount * taxRate));
-      $lineItem.data('amount', amount * taxRate);
+	  var hasVAT = 0;
+	  var taxPara = 1;
+	  var classes = $lineItem.attr('class').split(' ');
+	  for (var i = 0; i < classes.length; i++) {
+  		var match = /^vat-/.exec(classes[i]);
+    	if(match !== null){
+    		hasVAT = classes[i].substr(classes[i].indexOf("-") + 1);
+    	}
+	  }
+	  if(hasVAT!==0){
+	  	taxPara = 1 + (hasVAT / 100);
+	  }
+	  $('td+td', $lineItem).html(CRM.formatMoney(amount * taxPara));
+      $lineItem.data('amount', amount * taxPara);
     }
     tally();
   }

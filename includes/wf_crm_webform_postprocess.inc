@@ -1428,8 +1428,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['source'] = $this->settings['new_contact_source'];
     $params['total_amount'] = $this->totalContribution;
 	// TODO: needs review
-	$params['non_deductible_amount']  = $this->totalContribution;
-	$params['tax_amount'] = ($params['total_amount'] / ($this->taxRate + 100)) * $this->taxRate;
+	if (!is_null($this->taxRate)) {
+		$params['non_deductible_amount']  = $this->totalContribution;
+		$params['tax_amount'] = ($params['total_amount'] / ($this->taxRate + 100)) * $this->taxRate;
+	}
 
     // Save this stuff for later
     unset($params['soft'], $params['honor_contact_id'], $params['honor_type_id']);
