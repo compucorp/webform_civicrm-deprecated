@@ -1231,8 +1231,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Calculate totals
     $this->totalContribution = 0;
     foreach ($this->line_items as &$item) {
-      $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
-    }
+	  if (!is_null($this->taxRate)) {
+	  	$item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+	  	$item['unit_price'] += ($this->taxRate / 100) * $item['unit_price'];
+		$item['tax_amount'] = ($this->taxRate / 100) * $item['line_total'];
+	  	$this->totalContribution += $item['unit_price'] * (int) $item['qty'];
+	  }else{
+	  	$this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+	  }
+	}
     return $this->totalContribution;
   }
 
@@ -1420,6 +1427,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['contact_id'] = $this->id['cid'][1];
     $params['source'] = $this->settings['new_contact_source'];
     $params['total_amount'] = $this->totalContribution;
+	// TODO: needs review
+	$params['non_deductible_amount']  = $this->totalContribution;
+	$params['tax_amount'] = ($params['total_amount'] / ($this->taxRate + 100)) * $this->taxRate;
 
     // Save this stuff for later
     unset($params['soft'], $params['honor_contact_id'], $params['honor_type_id']);
@@ -1433,6 +1443,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function processContribution() {
     $contribution = $this->data['contribution'][1]['contribution'][1];
     $id = $this->id['contribution'];
+	
     // Save custom data
     if (count($this->data['contribution'][1]) > 1) {
       $this->saveCustomData($this->data['contribution'][1], $id, 'Contribution', FALSE);
@@ -1456,6 +1467,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         'honor_type_id' => $contribution['honor_type_id'],
       ));
     }
+	
+	$contributionResults = wf_civicrm_api('contribution', 'get', array('sequential' => 1, 'id' => $id));
+	$contributionRecord = json_decode(json_encode(array_shift($contributionResults['values'])), FALSE);
+	
     // Save line-items
     foreach ($this->line_items as &$item) {
       if (empty($item['line_total'])) {
@@ -1464,7 +1479,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (empty($item['entity_id'])) {
         $item['entity_id'] = $id;
       }
-      wf_civicrm_api('line_item', 'create', $item);
+	  if (empty($item['contribution_id'])) {
+        $item['contribution_id'] = $id;
+      }
+      $line_result = wf_civicrm_api('line_item', 'create', $item);
+	  $item['id'] = $line_result['id'];
+	  
+	  if(!is_null($this->taxRate)){
+	  	$lineItemRecord = json_decode(json_encode($item), FALSE);
+	  	// Add financial_item and entity_financial_trxn
+	  	$result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionRecord);
+		$result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionRecord, TRUE);
+	  }
       // Create participant/membership payment records
       if (isset($item['membership_id']) || isset($item['participant_id'])) {
         $type = isset($item['participant_id']) ? 'participant' : 'membership';

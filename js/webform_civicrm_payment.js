@@ -61,8 +61,11 @@ cj(function($) {
       '</tr>');
     }
     else {
-      $('td+td', $lineItem).html(CRM.formatMoney(amount));
-      $lineItem.data('amount', amount);
+      var taxString = $lineItem.html().split('%')[1];
+      var taxCode = taxString.split(')')[0];
+      var taxRate = 1 + (taxCode /100);console.log(taxRate);
+      $('td+td', $lineItem).html(CRM.formatMoney(amount * taxRate));
+      $lineItem.data('amount', amount * taxRate);
     }
     tally();
   }

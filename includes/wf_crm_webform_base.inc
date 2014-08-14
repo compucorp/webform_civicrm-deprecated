@@ -15,6 +15,7 @@ abstract class wf_crm_webform_base {
   protected $id = array();
   protected $events = array();
   protected $contribution_page;
+  protected $taxRate;
   protected $line_items = array();
   protected $membership_types = array();
 
@@ -509,6 +510,8 @@ abstract class wf_crm_webform_base {
     if ($params['id']) {
       $result = wf_crm_apivalues('contribution_page', 'get', $params);
       $this->contribution_page = wf_crm_aval($result, $params['id']);
+	  $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+	  $this->taxRate = $taxRates[$this->contribution_page['financial_type_id']];
     }
     return $this->contribution_page;
   }

@@ -604,7 +604,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @return string
    */
   private function displayLineItems() {
-    $this->getContributionPage();
+	$this->getContributionPage();
     $rows = array();
     $total = 0;
     // Support hidden contribution field
@@ -621,13 +621,31 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
     foreach ($this->line_items as $item) {
-      $total += $item['line_total'];
-      $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
-      $rows[] = array(
-        'data' => array($label, CRM_Utils_Money::format($item['line_total'])),
-        'class' => array($item['element'], 'line-item'),
-        'data-amount' => $item['line_total'],
-      );
+	  if (!is_null($this->taxRate)) {
+	  	// Change the line item label to display the tax rate it contains
+	  	$item['label'] .= ' (includes VAT %'.(int)$this->taxRate.')';
+		
+		// Add calculation for financial type that contains tax
+	  	$item['tax_amount'] = ($this->taxRate / 100) * $item['line_total'];
+	  	$item['unit_price'] = $item['unit_price'] * (($this->taxRate / 100) + 1);
+	  	$total += $item['line_total'] * (($this->taxRate / 100) + 1);
+		
+		$label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
+		$rows[] = array(
+        	'data' => array($label, CRM_Utils_Money::format($item['line_total'] * (($this->taxRate / 100) + 1))),
+        	'class' => array($item['element'], 'line-item'),
+        	'data-amount' => $item['line_total'] * (($this->taxRate / 100) + 1),
+      	);
+	  }else{
+	  	$total += $item['line_total'];
+		
+		$label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
+		$rows[] = array(
+        	'data' => array($label, CRM_Utils_Money::format($item['line_total'])),
+        	'class' => array($item['element'], 'line-item'),
+        	'data-amount' => $item['line_total'],
+      	);
+	  }
     }
     $rows[] = array(
       'data' => array(t('Total'), CRM_Utils_Money::format($total)),
