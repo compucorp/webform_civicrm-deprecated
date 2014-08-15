@@ -1470,8 +1470,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       ));
     }
 	
-	$contributionResults = wf_civicrm_api('contribution', 'get', array('sequential' => 1, 'id' => $id));
-	$contributionRecord = json_decode(json_encode(array_shift($contributionResults['values'])), FALSE);
+	$contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
 	
     // Save line-items
     foreach ($this->line_items as &$item) {
@@ -1490,8 +1489,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 	  if(!is_null($this->taxRate)){
 	  	$lineItemRecord = json_decode(json_encode($item), FALSE);
 	  	// Add financial_item and entity_financial_trxn
-	  	$result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionRecord);
-		$result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionRecord, TRUE);
+	  	$result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);
+		$result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, TRUE);
 	  }
       // Create participant/membership payment records
       if (isset($item['membership_id']) || isset($item['participant_id'])) {
