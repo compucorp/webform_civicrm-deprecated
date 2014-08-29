@@ -201,6 +201,9 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
   // Get the current user ID and current event ID
   $session = CRM_Core_Session::singleton();
   $currentEventID = $members_only_event->event_id;
+  if(is_object($members_only_event)){
+  	$session->set('member_event_id', $currentEventID);
+  }
   $userID = $session->get('userID');
   $durationCheck = true;
   $config = CRM_Membersonlyevent_BAO_MembershipConfig::getConfig();
@@ -237,7 +240,6 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
       
       if (!$userID) {
         $url = CRM_Utils_System::url('user/login', '',
-          //array('reset' => 1, 'id' => $members_only_event->contribution_page_id),
           FALSE, // absolute?
           NULL, // fragment
           TRUE, // htmlize?
@@ -261,40 +263,40 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
         
         CRM_Core_Region::instance('event-page-eventinfo-actionlinks-bottom')->add($snippet);
           
-      }
-	  
-	  if(!CRM_Core_Permission::check('members only event registration')){
-	  	$notification = 'Sorry.';
-	  	$infoText = 'You need to become a member to for register this event.';
-		$button_text = ts('Become a member to register for this event');
-	  }else if((CRM_Core_Permission::check('members only event registration')&&!$durationCheck)){
-	  	$notification = 'Sorry.';
-	  	$infoText = 'Your membership expires before the event start. Please extend your membership to register for this event.';
-		$button_text = ts('Extend your membership to register for this event');
-	  }
+      }else{
+      	if(!CRM_Core_Permission::check('members only event registration')){
+	  		$notification = 'Sorry.';
+	  		$infoText = 'You need to become a member to for register this event.';
+			$button_text = ts('Become a member to register for this event');
+	  	}else if((CRM_Core_Permission::check('members only event registration')&&!$durationCheck)){
+	  		$notification = 'Sorry.';
+	  		$infoText = 'Your membership expires before the event start. Please extend your membership to register for this event.';
+			$button_text = ts('Extend your membership to register for this event');
+	  	}
     	
-      $url = CRM_Utils_System::url('civicrm/contribute/transact',
-        array('reset' => 1, 'id' => $members_only_event->contribution_page_id),
-        FALSE, // absolute?
-        NULL, // fragment
-        TRUE, // htmlize?
-        TRUE // is frontend?
-      );
+      	$url = CRM_Utils_System::url('civicrm/event/member',
+        	array('id' => $currentEventID, 'reset' => 1),
+        	FALSE, // absolute?
+        	NULL, // fragment
+        	TRUE, // htmlize?
+        	TRUE // is frontend?
+      	);
 
-      $snippet = array(
-        'template' => 'CRM/Event/Page/members-event-button.tpl',
-        'button_text' => $button_text,
-        'position' => 'top',
-        'url' => $url,
-        'weight' => -10,
-      );
+      	$snippet = array(
+        	'template' => 'CRM/Event/Page/members-event-button.tpl',
+        	'button_text' => $button_text,
+        	'position' => 'top',
+        	'url' => $url,
+        	'weight' => -10,
+      	);
       
-      CRM_Core_Region::instance('event-page-eventinfo-actionlinks-top')->add($snippet);
+      	CRM_Core_Region::instance('event-page-eventinfo-actionlinks-top')->add($snippet);
 
-      $snippet['position'] = 'bottom';
-      $snippet['weight'] = -10;
+      	$snippet['position'] = 'bottom';
+      	$snippet['weight'] = -10;
            
-      CRM_Core_Region::instance('event-page-eventinfo-actionlinks-bottom')->add($snippet);
+      	CRM_Core_Region::instance('event-page-eventinfo-actionlinks-bottom')->add($snippet);
+      }
       
     }
     CRM_Core_Session::setStatus(ts($infoText), ts($notification), 'error');
@@ -315,9 +317,9 @@ function membersonlyevent_civicrm_alterContent(&$content, $context, $tplName, &$
     $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($_GET['id']);
           
     if (is_object($members_only_event) && $members_only_event->is_members_only_event == 1) {
-       
-      if (!CRM_Core_Permission::check('members only event registration')) {
-        $content = ts('<p>You are not allowed to register for this event!</p>');      
+ 
+      if (!CRM_Core_Permission::check('members only event registration')&&!isset($_GET['mid'])) {
+        	$content = ts('<p>You are not allowed to register for this event!</p>');
       }
       
     }

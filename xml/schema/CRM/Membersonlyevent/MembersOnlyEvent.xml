@@ -36,14 +36,14 @@
   </foreignKey>
   
   <field>
-    <name>contribution_page_id</name>
+    <name>price_field_id</name>
     <type>int unsigned</type>
-    <comment>Foreign key for the Contribution page</comment>
+    <comment>Foreign key for the Price field id</comment>
     <add>4.4</add>
   </field>
   <foreignKey>
-    <name>contribution_page_id</name>
-    <table>civicrm_contribution_page</table>
+    <name>price_field_id</name>
+    <table>civicrm_price_field</table>
     <key>id</key>
     <add>4.4</add>
     <onDelete>SET NULL</onDelete>

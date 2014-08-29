@@ -7,7 +7,7 @@ require_once 'CRM/Core/Form.php';
  *
  * @see http://wiki.civicrm.org/confluence/display/CRMDOC43/QuickForm+Reference
  */
-class CRM_Membersonlyevent_Form_MembersEventConfig extends CRM_Core_Form {
+class CRM_Membersonlyevent_Form_MembersEventConfig extends CRM_Admin_Form_Setting {
   protected $_config = NULL;
 
   function preProcess() {
@@ -49,6 +49,11 @@ class CRM_Membersonlyevent_Form_MembersEventConfig extends CRM_Core_Form {
 
   function postProcess() {
   	CRM_Utils_System::flushCache();
+	
+	// redirect to admin page after saving
+    $session = CRM_Core_Session::singleton();
+	$session->pushUserContext(CRM_Utils_System::url('civicrm/admin'));
+	
     $values = $this->exportValues();
 	$params['id'] = $this->_config['id'];
 	if(isset($values['check_duration'])){

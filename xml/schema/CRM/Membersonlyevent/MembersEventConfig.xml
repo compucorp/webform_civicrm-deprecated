@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Membersonlyevent</base>
+  <class>MembersEventConfig</class>
+  <name>civicrm_membersonlyevent_config</name>
+  <add>4.4</add>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique MembersEventConfig ID</comment>
+    <add>4.4</add>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>false</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>duration_check</name>
+    <type>int unsigned</type>
+    <default>0</default>
+    <comment>Enable membership duration check</comment>
+    <add>4.4</add>
+  </field>
+
+</table>

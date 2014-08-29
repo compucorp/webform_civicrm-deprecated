@@ -32,16 +32,16 @@
       jQuery("#is_members_only_event input[type=checkbox]").click(function(){
         
         if (jQuery(this).attr("checked") == true){
-          jQuery("#contribution_page_id").show();
+          jQuery("#price_field_id").show();
         }
         else {
-          jQuery("#contribution_page_id").hide();
+          jQuery("#price_field_id").hide();
         }
       
       });
       
       if (jQuery("#is_members_only_event input[type=checkbox]").attr("checked") == false){
-        jQuery("#contribution_page_id").hide();
+        jQuery("#price_field_id").hide();
       }
       
     });

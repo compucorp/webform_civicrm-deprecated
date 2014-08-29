@@ -12,4 +12,10 @@
     <title>MembersEventConfig</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/event/member</path>
+    <page_callback>CRM_Membersonlyevent_Form_EventMemberSelect</page_callback>
+    <title>EventMemberSelect</title>
+    <access_arguments>register for events</access_arguments>
+  </item>
 </menu>

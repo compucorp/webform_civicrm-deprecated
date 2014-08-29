@@ -21,9 +21,10 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
     
     // add form elements
     $this->add(
-      'select', // field type
-      'contribution_page_id', // field name
-      ts('Contribution page used for membership signup'), // field label
+      'text', // field type
+      'price_field_id', // field name
+      ts('Price field used for membership signup'), // field label
+      //TODO:
       $this->getContributionPagesAsOptions(),   // list of attributes
       false // is required
     );
@@ -63,6 +64,7 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
     return $defaults;
   }
   
+  //TODO:
   function getContributionPagesAsOptions() {
       
     $results = civicrm_api3('ContributionPage', 'get', array('sequential' => 1));
