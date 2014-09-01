@@ -7,30 +7,30 @@ require_once 'CRM/Core/Form.php';
  *
  * @see http://wiki.civicrm.org/confluence/display/CRMDOC43/QuickForm+Reference
  */
-class CRM_Membersonlyevent_Form_EventMemberSelect extends CRM_Event_Form_Registration {
+class CRM_Event_Form_Registration_EventMemberSelect extends CRM_Event_Form_Registration {
 
-  //protected $_eventId = NULL;
+  protected $_membership_price_field_id = NULL;
+  
+  protected $_membershipList = NULL;
   
   function preProcess() {
     parent::preProcess();
 	$session = CRM_Core_Session::singleton();
+	$session->set('is_member', FALSE);
 	$this->_eventId = $session->get('member_event_id');
   }
   
   function buildQuickForm() {
   	CRM_Utils_System::setTitle(ts('Become a Member'));
 	
-  	$relationshipList = array(
-  		'1' => 'test1',
-  		'2' => 'test2'
-	);
+  	$this->_membershipList = $this->getMembershipList();
   	
 	// add form elements
     $this->add(
       'select', // field type
       'membership_types', // field name
       ts('Membership Types'), // field label
-      array( '' => ts('-- Select --')) + $relationshipList,// list of attributes
+      array( '' => ts('-- Select --')) + $this->_membershipList,// list of attributes
       TRUE // is required
     );
 	
@@ -50,17 +50,50 @@ class CRM_Membersonlyevent_Form_EventMemberSelect extends CRM_Event_Form_Registr
   function postProcess() {
   	CRM_Utils_System::flushCache();
 	
+	$session = CRM_Core_Session::singleton();
     $values = $this->exportValues();
-	if(isset($values['membership_types'])){
-	  $params['membership_types'] = $values['membership_types'];
+	
+	if(isset($values['membership_types'])&&array_key_exists($values['membership_types'], $this->_membershipList)){
+	  $session->set('membership_price_field_id', $this->_membership_price_field_id);
+	  $session->set('membership_price_field_value_id', $values['membership_types']);
 	}else{
-	  $params['membership_types'] = 0;
+	  $session->set('membership_type', 0);
 	}
 	
 	$url = CRM_Utils_System::url('civicrm/event/register',
-      "reset=1&id={$this->_eventId}&mid={$params['membership_types']}"
+      "reset=1&id={$this->_eventId}"
     );
 	CRM_Utils_System::redirect($url);
+  }
+  
+  function getMembershipList(){
+  	
+  	$members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($this->_eventId);
+	
+	if(is_object($members_only_event)) {
+		
+      if(!is_null($members_only_event->price_field_id)){
+      	$param = array( 'price_field_id' => $members_only_event->price_field_id );
+		$results = civicrm_api3('PriceFieldValue', 'get', $param);
+		$output = array();
+		
+		if($results['is_error'] != 1){
+			$this->_membership_price_field_id = $members_only_event->price_field_id;
+			foreach ($results['values'] as $key => $value) {
+				$output[$key] = $value['label'];
+			}
+			return $output;
+		}else{
+			return NULL;
+		}
+		
+      }else{
+    	return NULL;
+      }
+	  
+    }else{
+    	return NULL;
+    }
   }
   
   /**

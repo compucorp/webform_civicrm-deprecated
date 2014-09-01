@@ -7,7 +7,7 @@ require_once 'CRM/Core/Form.php';
  *
  * @see http://wiki.civicrm.org/confluence/display/CRMDOC43/QuickForm+Reference
  */
-class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEvent {
+class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_Form_ManageEvent {
   function buildQuickForm() {
      
     // add form elements
@@ -16,18 +16,29 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
       'is_members_only_event', // field name
       ts('Is members only event?'), // field label
       '',   // list of attributes
-      false // is required
+      FALSE // is required
     );
     
+	$priceFields = $this->getMemberPriceField();
+	
     // add form elements
-    $this->add(
-      'text', // field type
-      'price_field_id', // field name
-      ts('Price field used for membership signup'), // field label
-      //TODO:
-      $this->getContributionPagesAsOptions(),   // list of attributes
-      false // is required
-    );
+    if(!$priceFields){
+      $this->add(
+      	'static', // field type
+      	'price_field_id', // field name
+      	ts('Price field used for membership signup'), // field label
+      	'To enable this, choose a price set in the event "Fees" tab.'
+      );
+    }else{
+      $this->add(
+      	'select', // field type
+      	'price_field_id', // field name
+      	ts('Price field used for membership signup'), // field label
+      	array('' => ts('- Select membership price field -')) + $priceFields, // list of attributes
+      	TRUE
+      );
+    }
+    
     
     $this->addButtons(array(
       array(
@@ -57,25 +68,38 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
     if(is_object($members_only_event)) {
     
       $defaults['is_members_only_event'] = $members_only_event->is_members_only_event;
-      $defaults['contribution_page_id'] = $members_only_event->contribution_page_id;
-    
+		
+      if(!is_null($members_only_event->price_field_id)){
+      	$defaults['price_field_id'] = $members_only_event->price_field_id;
+      }
+	    
     }
     
     return $defaults;
   }
   
-  //TODO:
-  function getContributionPagesAsOptions() {
-      
-    $results = civicrm_api3('ContributionPage', 'get', array('sequential' => 1));
-    $contribution_pages = $results['values'];
-    
-    $return_array = array();
-    $return_array['NULL'] = ts('- Select contribution page -');
-    
-    foreach ($contribution_pages as $key => $contribution_object) {
-      $return_array[$contribution_object['id']] = $contribution_object['title'];
-    }
+  function getMemberPriceField() {
+  	
+  	$eventId  = $this->_id;
+	$return_array = array();
+		
+  	if (isset($eventId)) {
+      $price_set_id = CRM_Price_BAO_PriceSet::getFor('civicrm_event', $eventId, NULL, 1);
+
+      if ($price_set_id) {
+		$results = civicrm_api3('PriceField', 'get', array('price_set_id' => $price_set_id));
+    	$price_fields = $results['values'];
+		
+		foreach ($price_fields as $key => $price_field) {
+      		$return_array[$key] = $price_field['label'];
+    	}
+      }
+      else {
+      	return FALSE;
+      }
+	}else{
+		return FALSE;
+	}
     
     return $return_array;
   }
@@ -92,14 +116,19 @@ class CRM_Membersonlyevent_Form_MembersOnlyEvent extends CRM_Event_Form_ManageEv
     }
     
     $params['event_id'] = $this->_id;
-    $params['contribution_page_id'] = $passed_values['contribution_page_id'];
+	if(is_numeric($passed_values['price_field_id'])){
+		$params['price_field_id'] = $passed_values['price_field_id'];
+	}else{
+		$params['price_field_id'] = NULL;
+	}
+    
     $params['is_members_only_event'] = isset($passed_values['is_members_only_event']) ? $passed_values['is_members_only_event'] : 0;
     
     // Create or edit the values
     CRM_Membersonlyevent_BAO_MembersOnlyEvent::create($params);
     
     //need recheck
-    parent::postProcess();
+    parent::endPostProcess();
   }
 
   /**

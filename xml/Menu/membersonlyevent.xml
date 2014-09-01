@@ -2,7 +2,7 @@
 <menu>
   <item>
     <path>civicrm/event/manage/membersonlyevent</path>
-    <page_callback>CRM_Membersonlyevent_Form_MembersOnlyEvent</page_callback>
+    <page_callback>CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent</page_callback>
     <title>MembersOnlyEvent</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
@@ -13,8 +13,8 @@
     <access_arguments>access CiviCRM</access_arguments>
   </item>
   <item>
-    <path>civicrm/event/member</path>
-    <page_callback>CRM_Membersonlyevent_Form_EventMemberSelect</page_callback>
+    <path>civicrm/event/register/member</path>
+    <page_callback>CRM_Event_Form_Registration_EventMemberSelect</page_callback>
     <title>EventMemberSelect</title>
     <access_arguments>register for events</access_arguments>
   </item>

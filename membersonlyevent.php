@@ -274,7 +274,7 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
 			$button_text = ts('Extend your membership to register for this event');
 	  	}
     	
-      	$url = CRM_Utils_System::url('civicrm/event/member',
+      	$url = CRM_Utils_System::url('civicrm/event/register/member',
         	array('id' => $currentEventID, 'reset' => 1),
         	FALSE, // absolute?
         	NULL, // fragment
@@ -315,10 +315,30 @@ function membersonlyevent_civicrm_alterContent(&$content, $context, $tplName, &$
       
     // Search for the Members Only Event object by the Event ID
     $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($_GET['id']);
+	$session = CRM_Core_Session::singleton();
+  	$currentEventID = $members_only_event->event_id;
+  	$userID = $session->get('userID');
+  	$durationCheck = true;
+  	$config = CRM_Membersonlyevent_BAO_MembersEventConfig::getConfig();
+	if($config['duration_check'] == 1&&$userID){
+  		$durationCheck = false;
+    	if(is_object($members_only_event)){
+  	 	 $currentEventID = $page->_id;
+	  	$currentEvent = civicrm_api3('event', 'get', array('id' => $currentEventID));
+	  	$memberships = civicrm_api3('membership', 'get', array('contact_id' => $userID));
+      		foreach($memberships['values'] as $key => $membership){
+  	    		if($membership['end_date'] >= $currentEvent['values'][$currentEventID]['event_start_date']){
+  	  		  		$durationCheck = true;
+  	   	 		}
+    		}
+  	  	}
+  	}
           
     if (is_object($members_only_event) && $members_only_event->is_members_only_event == 1) {
- 
-      if (!CRM_Core_Permission::check('members only event registration')&&!isset($_GET['mid'])) {
+    	
+	  $select_membership = $session->get('membership_type');
+	  if ((!CRM_Core_Permission::check('members only event registration')||
+    (CRM_Core_Permission::check('members only event registration')&&!$durationCheck))&&!$select_membership){
         	$content = ts('<p>You are not allowed to register for this event!</p>');
       }
       
