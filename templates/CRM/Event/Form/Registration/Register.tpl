@@ -360,6 +360,18 @@
     }
   }
   {/literal}{/if}{literal}
+  
+  //TODO: consider hide price fields
+  cj(document).ready(function(){
+
+  	{/literal}{if $paidMembership == 0 }{literal}
+
+  		var priceFields = cj("[name^='{/literal}{ $membershipField }{literal}']");
+  		priceFields.attr('disabled', 'disabled');
+
+  	{/literal}{/if}{literal}
+        
+  });
 
 </script>
 {/literal}

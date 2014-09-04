@@ -206,7 +206,7 @@ function _membersonlyevent_civicrm_pageRun_CRM_Event_Page_EventInfo(&$page) {
   }
   $userID = $session->get('userID');
   $durationCheck = true;
-  $config = CRM_Membersonlyevent_BAO_MembershipConfig::getConfig();
+  $config = CRM_Membersonlyevent_BAO_MembersEventConfig::getConfig();
   if($config['duration_check'] == 1&&$userID){
   	$durationCheck = false;
     if(is_object($members_only_event)){
@@ -336,7 +336,7 @@ function membersonlyevent_civicrm_alterContent(&$content, $context, $tplName, &$
           
     if (is_object($members_only_event) && $members_only_event->is_members_only_event == 1) {
     	
-	  $select_membership = $session->get('membership_type');
+	  $select_membership = $session->get('membership_price_field_value_id');
 	  if ((!CRM_Core_Permission::check('members only event registration')||
     (CRM_Core_Permission::check('members only event registration')&&!$durationCheck))&&!$select_membership){
         	$content = ts('<p>You are not allowed to register for this event!</p>');

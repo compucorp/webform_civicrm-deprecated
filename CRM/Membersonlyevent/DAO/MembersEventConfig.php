@@ -27,7 +27,7 @@
 
 require_once 'CRM/Core/DAO.php';
 require_once 'CRM/Utils/Type.php';
-class CRM_Membersonlyevent_DAO_MembershipConfig extends CRM_Core_DAO
+class CRM_Membersonlyevent_DAO_MembersEventConfig extends CRM_Core_DAO
 {
   /**
    * static instance to hold the table name

@@ -263,6 +263,36 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
       $this->_defaults['participant_role'] =
       $this->_defaults['participant_role_id'] = $this->_values['event']['default_role_id'];
     }
+	
+  	//membersonlyevent
+  	$currentSession = CRM_Core_Session::singleton();
+  	$paidMembership = $currentSession->get('paid_membership');
+  	
+  	if(!$paidMembership||is_null($paidMembership)){
+  	  
+  		$membershipField = $currentSession->get('membership_price_field_id');
+  		$membershipValue = $currentSession->get('membership_price_field_value_id');
+      
+      $this->assign('paidMembership', $paidMembership);
+      $this->assign('membershipField', 'price_'.$membershipField);
+  	
+  		if ($this->_priceSetId && !empty($this->_feeBlock)) {
+        	foreach ($this->_feeBlock as $key => $val) {
+          	foreach ($val['options'] as $keys => $values) {
+  	      		if($key==$membershipField&&$keys==$membershipValue){
+              	if ($val['html_type'] == 'CheckBox') {
+                	$this->_defaults["price_{$key}"][$keys] = 1;
+              	}else{
+                	$this->_defaults["price_{$key}"] = $keys;
+              	}
+  		  		  }
+          	}
+        	}
+      	}
+  	}else{
+  	  $this->assign('paidMembership', 1);
+  	}
+	
     if ($this->_priceSetId && !empty($this->_feeBlock)) {
       foreach ($this->_feeBlock as $key => $val) {
         foreach ($val['options'] as $keys => $values) {
@@ -970,7 +1000,31 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
   public function postProcess() {
     // get the submitted form values.
     $params = $this->controller->exportValues($this->_name);
-
+    
+    //membersonlyevent
+    $currentSession = CRM_Core_Session::singleton();
+    $paidMembership = $currentSession->get('paid_membership');
+    
+    if(!$paidMembership||is_null($paidMembership)){
+      
+      $membershipField = $currentSession->get('membership_price_field_id');
+      $membershipValue = $currentSession->get('membership_price_field_value_id');
+      
+      if ($this->_priceSetId && !empty($this->_feeBlock)) {
+          foreach ($this->_feeBlock as $key => $val) {
+            foreach ($val['options'] as $keys => $values) {
+              if($key==$membershipField&&$keys==$membershipValue){
+                if ($val['html_type'] == 'CheckBox') {
+                  $params["price_{$key}"][$keys] = 1;
+                }else{
+                  $$params["price_{$key}"] = $keys;
+                }
+              }
+            }
+          }
+        }
+    }
+dpm($params);
     //set as Primary participant
     $params['is_primary'] = 1;
 

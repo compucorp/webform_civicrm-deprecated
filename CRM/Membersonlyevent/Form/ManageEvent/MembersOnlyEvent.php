@@ -19,7 +19,7 @@ class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_F
       FALSE // is required
     );
     
-	$priceFields = $this->getMemberPriceField();
+	$priceFields = $this->getMemberPriceFields();
 	
     // add form elements
     if(!$priceFields){
@@ -30,6 +30,7 @@ class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_F
       	'To enable this, choose a price set in the event "Fees" tab.'
       );
     }else{
+      //TODO: remove the null option and add default value listening in tpl
       $this->add(
       	'select', // field type
       	'price_field_id', // field name
@@ -37,8 +38,29 @@ class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_F
       	array('' => ts('- Select membership price field -')) + $priceFields, // list of attributes
       	TRUE
       );
+      
+      $priceValues = $this->getMemberPriceValues($priceFields);
+      $membershipTypes = $this->getMembershipTypes();
+      $count = 0;
+      foreach ($priceValues as $key => $value) {
+        
+        $this->add(
+          'text', // field type
+          'price_value_selectitem_'.$count, // field name
+          ts($value['label']), // field label
+          array('value' => $key, 'readonly' => 'readonly', 'aria-required' => "true"),
+          TRUE
+        );
+        $count++;
+        $this->add(
+          'select', // field type
+          'membership_type_selectitem_'.$count, // field name
+          ts('Price field used for membership signup'), // field label
+          array('' => ts('- Select membership type -')) + $membershipTypes
+        );
+        $count++;
+      }
     }
-    
     
     $this->addButtons(array(
       array(
@@ -78,28 +100,61 @@ class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_F
     return $defaults;
   }
   
-  function getMemberPriceField() {
+  function getMemberPriceFields() {
   	
   	$eventId  = $this->_id;
-	$return_array = array();
+	  $return_array = array();
 		
   	if (isset($eventId)) {
       $price_set_id = CRM_Price_BAO_PriceSet::getFor('civicrm_event', $eventId, NULL, 1);
 
       if ($price_set_id) {
-		$results = civicrm_api3('PriceField', 'get', array('price_set_id' => $price_set_id));
-    	$price_fields = $results['values'];
+		    $results = civicrm_api3('PriceField', 'get', array('price_set_id' => $price_set_id, 'is_active' => 1));
+    	  $price_fields = $results['values'];
 		
-		foreach ($price_fields as $key => $price_field) {
+		    foreach ($price_fields as $key => $price_field) {
       		$return_array[$key] = $price_field['label'];
-    	}
-      }
-      else {
+    	  }
+      }else {
       	return FALSE;
       }
-	}else{
-		return FALSE;
-	}
+	  }else{
+		  return FALSE;
+	  }
+    
+    return $return_array;
+  }
+  
+  function getMemberPriceValues($fields) {
+    
+    if(count($fields)>0){
+      $count = 0;
+      $priceValueList = array();
+      $return_array = NULL;
+      
+      foreach ($fields as $id => $field) {
+        $result = civicrm_api3('PriceFieldValue', 'get', array('price_field_id' => $id));
+        $priceValueList[$id] = $result['values'];
+        if($result['count']>$count){
+          $count = $result['count'];
+          $return_array = $result['values'];
+        }
+      }
+      
+      $this->assign('priceValueList', $priceValueList);
+      return $return_array;
+    }
+    
+  }
+  
+  function getMembershipTypes() {
+    
+    $result = civicrm_api3('MembershipType', 'get');
+    $membership_types = $result['values'];
+    
+    foreach ($membership_types as $key => $membership_type) {
+      $return_array[$key] = $membership_type['name'];
+    }
     
     return $return_array;
   }
@@ -116,11 +171,11 @@ class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_F
     }
     
     $params['event_id'] = $this->_id;
-	if(is_numeric($passed_values['price_field_id'])){
-		$params['price_field_id'] = $passed_values['price_field_id'];
-	}else{
-		$params['price_field_id'] = NULL;
-	}
+  	if(is_numeric($passed_values['price_field_id'])){
+  		$params['price_field_id'] = $passed_values['price_field_id'];
+  	}else{
+  		$params['price_field_id'] = NULL;
+  	}
     
     $params['is_members_only_event'] = isset($passed_values['is_members_only_event']) ? $passed_values['is_members_only_event'] : 0;
     

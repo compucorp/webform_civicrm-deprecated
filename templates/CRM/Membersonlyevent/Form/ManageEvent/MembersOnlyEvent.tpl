@@ -10,13 +10,35 @@
     
   {* FIELDS: (AUTOMATIC LAYOUT) *}
 
-  {foreach from=$elementNames item=elementName}
-    <div class="crm-section" id="{$form.$elementName.id}_div">
-      <div class="label">{$form.$elementName.label}</div>
-      <div class="content">{$form.$elementName.html}</div>
-      <div class="clear"></div>
-    </div>
-  {/foreach}
+  <div class="crm-section" id="{$form.is_members_only_event.id}_div">
+    <div class="label">{$form.is_members_only_event.label}</div>
+    <div class="content">{$form.is_members_only_event.html}</div>
+    <div class="clear"></div>
+  </div>
+  <div class="crm-section" id="{$form.price_field_id.id}_div">
+    <div class="label">{$form.price_field_id.label}</div>
+    <div class="content">{$form.price_field_id.html}</div>
+    <div class="clear"></div>
+    
+    <fieldset name="price_member_match" id="price_member_match" >
+    <h3>Choose the membership type for each price:</h3>
+    {foreach from=$elementNames item=elementName}
+    {if is_numeric(substr($form.$elementName.id, -1))}
+      {if is_int(substr($form.$elementName.id, -1)/2) }
+        <div class="crm-section" id="{$form.$elementName.id}_div">
+          <div class="label">{$form.$elementName.label}</div>
+          <div class="content">{$form.$elementName.html}
+          
+      {else}
+          {$form.$elementName.html}</div>
+          <div class="clear"></div>
+        </div>
+      {/if}
+    {/if}
+    {/foreach}
+    </fieldset>
+  
+  </div>
 
 </div>
 
@@ -28,26 +50,65 @@
   
   <script type="text/javascript">
   {literal}
-    jQuery(document).ready(function(){
-      jQuery("#is_members_only_event_div input[type=checkbox]").click(function(){
+    cj(document).ready(function(){
+      cj("input[id^='price_value_selectitem_']").hide();
+      priceMemberMatch();
+      cj("#is_members_only_event_div input[type=checkbox]").click(function(){
         
-        jQuery("#price_field_id").toggleClass( "required");
+        cj("#price_field_id").toggleClass( "required");
         
-        if (jQuery(this).attr("checked") == true){
-          jQuery("#price_field_id_div").show();
+        if (cj(this).is(':checked')){
+          cj("#price_field_id_div").show();
         }
         else {
-          jQuery("#price_field_id_div").hide();
+          cj("#price_field_id_div").hide();
         }
       
       });
       
-      if (jQuery("#is_members_only_event_div input[type=checkbox]").attr("checked") == false){
-      	jQuery("#price_field_id").toggleClass( "required");
-        jQuery("#price_field_id_div").hide();
+      if (!cj("#is_members_only_event_div input[type=checkbox]").is(':checked')){
+      	cj("#price_field_id").toggleClass( "required");
+        cj("#price_field_id_div").hide();
       }
       
     });
+    
+    function priceMemberMatch(){
+
+      cj("input[id^='price_value_selectitem_']").bind('input', function(e) {
+      		var inputId = parseInt(cj(this).attr("id").substr(-1))+1;
+      		if(cj(this).val()){
+      			cj(this).removeAttr('disabled');
+      			cj("select[id^='membership_type_selectitem_"+inputId+"']").removeAttr('disabled');
+      			cj("#"+cj(this).attr("id")+"_div").show();
+      		}else{
+      			cj(this).attr('disabled', 'disabled');
+      			cj("select[id^='membership_type_selectitem_"+inputId+"']").attr('disabled', 'disabled');
+      			cj("#"+cj(this).attr("id")+"_div").hide();
+      		}
+	  });
+
+      cj("#price_field_id").on('change', function(e) {
+        cj("input[id^='price_value_selectitem_']").val("").trigger('input');
+        cj("select[id^='membership_type_selectitem_']").val("");
+        var priceFieldId = e.target.options[e.target.selectedIndex].value;
+        var count = 0;
+        var priceValueSet=0;
+        
+        {/literal}{foreach from=$priceValueList key=k item=i}{literal}
+          if({/literal}{$k}{literal}==priceFieldId){
+            priceValueSet = {/literal}{$i|@json_encode}{literal};
+          }
+        {/literal}{/foreach}{literal}
+        
+        cj.each(priceValueSet,function(index, value){
+          cj("label[for='price_value_selectitem_"+count+"']").text(value["label"]);
+          cj("input[id^='price_value_selectitem_"+count+"']").val(index).trigger('input');
+          count+=2;
+        });
+
+      });
+    }
   {/literal}
   </script>
     

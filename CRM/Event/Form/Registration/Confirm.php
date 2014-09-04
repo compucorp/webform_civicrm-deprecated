@@ -579,28 +579,33 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
           }
         }
 		
-		//membersonlyevent
-		$currentSession = CRM_Core_Session::singleton();
-		$membershipField = $currentSession->get('membership_price_field_id');
-		$membershipValue = $currentSession->get('membership_price_field_value_id');
-		$membershipCheck = FALSE;
-		
-		foreach ($this->_lineItem as $setKey => $setValue) {
-			foreach ($setValue as $key => $value) {
-				if($value['price_field_id']==$membershipField && $value['price_field_value_id']==$membershipValue){
-					$membershipCheck = TRUE;
-					break;
-				}
-			}
-		}
-		
-		if(!$session->get('is_member')){
-        	if(!$membershipCheck){
-          		CRM_Core_Error::displaySessionError("Membership Invalid");
-          		CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/event/register', "id={$this->_eventId}"));
-        	}
+		    //membersonlyevent
+		    $currentSession = CRM_Core_Session::singleton();
+        $paidMembership = $currentSession->get('paid_membership');
+        
+        if(!$paidMembership||is_null($paidMembership)){
+          
+  		    $membershipField = $currentSession->get('membership_price_field_id');
+  		    $membershipValue = $currentSession->get('membership_price_field_value_id');
+  		    $membershipCheck = FALSE;
+  		
+  		    foreach ($this->_lineItem as $setKey => $setValue) {
+  			    foreach ($setValue as $key => $value) {
+  				    if($value['price_field_id']==$membershipField && $value['price_field_value_id']==$membershipValue){
+  					    $membershipCheck = TRUE;
+  					    break;
+  				    }
+  			    }
+  		    }
+  		
+  	      if(!$session->get('paid_membership')){
+          	if(!$membershipCheck){
+            	CRM_Core_Error::displaySessionError("Membership Invalid");
+            	CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/event/register', "id={$this->_eventId}"));
+          	}
+          }
         }
-		
+        
         if (is_a($result, 'CRM_Core_Error')) {
           CRM_Core_Error::displaySessionError($result);
           CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/event/register', "id={$this->_eventId}"));
@@ -880,6 +885,10 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
         $this->assign('contactID', $contactId);
         $this->assign('participantID', $participantID);
         CRM_Event_BAO_Event::sendMail($contactId, $this->_values, $participantID, $isTest);
+		
+        //membersonlyevent
+		    $currentSession = CRM_Core_Session::singleton();
+		    $currentSession->set('paid_membership', 1);
       }
     }
   }
