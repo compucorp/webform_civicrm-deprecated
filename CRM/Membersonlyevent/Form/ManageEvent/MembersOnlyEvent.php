@@ -8,6 +8,9 @@ require_once 'CRM/Core/Form.php';
  * @see http://wiki.civicrm.org/confluence/display/CRMDOC43/QuickForm+Reference
  */
 class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_Form_ManageEvent {
+  
+  public $_priceValueSet = array();
+  
   function buildQuickForm() {
      
     // add form elements
@@ -30,26 +33,24 @@ class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_F
       	'To enable this, choose a price set in the event "Fees" tab.'
       );
     }else{
-      //TODO: remove the null option and add default value listening in tpl
       $this->add(
       	'select', // field type
       	'price_field_id', // field name
       	ts('Price field used for membership signup'), // field label
-      	array('' => ts('- Select membership price field -')) + $priceFields, // list of attributes
+      	$priceFields, // list of attributes
       	TRUE
       );
       
       $priceValues = $this->getMemberPriceValues($priceFields);
       $membershipTypes = $this->getMembershipTypes();
       $count = 0;
+      
       foreach ($priceValues as $key => $value) {
-        
         $this->add(
           'text', // field type
           'price_value_selectitem_'.$count, // field name
           ts($value['label']), // field label
-          array('value' => $key, 'readonly' => 'readonly', 'aria-required' => "true"),
-          TRUE
+          array('readonly' => 'readonly')
         );
         $count++;
         $this->add(
@@ -93,6 +94,18 @@ class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_F
 		
       if(!is_null($members_only_event->price_field_id)){
       	$defaults['price_field_id'] = $members_only_event->price_field_id;
+        
+        $priceFieldValues = $this->_priceValueSet[$defaults['price_field_id']];
+        
+        $event_member_prices = CRM_Membersonlyevent_BAO_EventMemberPrice::retrieve(array('event_id' => $this->_id));
+        foreach ($event_member_prices as $key => $value) {
+          foreach ($priceFieldValues as $order => $item) {
+            if($value->price_value_id==$item['id']){
+              $element = $order*2+1;
+              $defaults['membership_type_selectitem_'.$element] = $value->membership_type_id;
+            }
+          }
+        }
       }
 	    
     }
@@ -133,7 +146,7 @@ class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_F
       $return_array = NULL;
       
       foreach ($fields as $id => $field) {
-        $result = civicrm_api3('PriceFieldValue', 'get', array('price_field_id' => $id));
+        $result = civicrm_api3('PriceFieldValue', 'get', array('price_field_id' => $id, 'sequential' => 1));
         $priceValueList[$id] = $result['values'];
         if($result['count']>$count){
           $count = $result['count'];
@@ -142,6 +155,7 @@ class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_F
       }
       
       $this->assign('priceValueList', $priceValueList);
+      $this->_priceValueSet = $priceValueList;
       return $return_array;
     }
     
@@ -179,11 +193,50 @@ class CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent extends CRM_Event_F
     
     $params['is_members_only_event'] = isset($passed_values['is_members_only_event']) ? $passed_values['is_members_only_event'] : 0;
     
-    // Create or edit the values
-    CRM_Membersonlyevent_BAO_MembersOnlyEvent::create($params);
+    if($params['is_members_only_event']==1){
+      // Create or edit the values
+      CRM_Membersonlyevent_BAO_MembersOnlyEvent::create($params); 
+    }else{
+      if(isset($params['id'])){
+        civicrm_api3('MembersOnlyEvent', 'delete', array('id' => $params['id']));
+      }
+    }
+    
+    //reset params for creating event member prices
+    $params = array('event_id' => $this->_id);
+    $priceValues = $this->preg_grep_keys_replace('/^price_value_selectitem_/', $passed_values);
+    $memberTypes = $this->preg_grep_keys_replace('/^membership_type_selectitem_/', $passed_values);
+    $result = civicrm_api3('EventMemberPrice', 'get', array('event_id' => $params['event_id'], 'sequential' => 1));
+    $memberPriceIds = $result['values'];
+    $count = 0;
+    
+    foreach ($priceValues as $key => $value) {
+      if(is_numeric($value)){
+        if(is_numeric($memberTypes[$key+1])){
+          $params['id'] = $memberPriceIds[$count]['id'];
+          $params['price_value_id'] = $value;
+          $params['membership_type_id'] = $memberTypes[$key+1];
+          CRM_Membersonlyevent_BAO_EventMemberPrice::create($params);
+          $count++;
+        }
+      }
+    }
+    
+    $deleteRecords = sizeof($memberPriceIds)-$count;
+    if($deleteRecords>0){
+      for ($i=0; $i < $deleteRecords; $i++) { 
+        civicrm_api3('EventMemberPrice', 'delete', array('id' => $memberPriceIds[$count+$i]['id']));
+      }
+    }
     
     //need recheck
     parent::endPostProcess();
+  }
+
+  function preg_grep_keys_replace($pattern, $input, $flags = 0) {
+      $origin = array_intersect_key($input, array_flip(preg_grep( $pattern, array_keys($input))));
+      $dropped = preg_replace( $pattern, '', array_flip($origin));
+      return array_flip($dropped);
   }
 
   /**

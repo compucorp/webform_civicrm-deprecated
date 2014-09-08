@@ -66,7 +66,7 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
     parent::preProcess();
 
     // lineItem isn't set until Register postProcess
-    $this->_lineItem = $this->get('lineItem');dpm($this->_lineItem);
+    $this->_lineItem = $this->get('lineItem');//dpm($this->_lineItem);
 
     $this->_params = $this->get('params');
     $this->_params[0]['tax_amount'] = $this->get('tax_amount');
@@ -583,9 +583,10 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
 		    $currentSession = CRM_Core_Session::singleton();
         $paidMembership = $currentSession->get('paid_membership');
         
-        if(!$paidMembership||is_null($paidMembership)){
+        if(is_numeric($paidMembership)&&$paidMembership==0){
           
-  		    $membershipField = $currentSession->get('membership_price_field_id');
+          $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($this->_eventId);
+          $membershipField = $members_only_event->price_field_id;
   		    $membershipValue = $currentSession->get('membership_price_field_value_id');
   		    $membershipCheck = FALSE;
   		
@@ -597,10 +598,9 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
   				    }
   			    }
   		    }
-  		
-  	      if(!$session->get('paid_membership')){
+          
+  	      if(is_numeric($paidMembership)&&$paidMembership==0){
           	if(!$membershipCheck){
-            	CRM_Core_Error::displaySessionError("Membership Invalid");
             	CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/event/register', "id={$this->_eventId}"));
           	}
           }
@@ -885,9 +885,71 @@ class CRM_Event_Form_Registration_Confirm extends CRM_Event_Form_Registration {
         $this->assign('contactID', $contactId);
         $this->assign('participantID', $participantID);
         CRM_Event_BAO_Event::sendMail($contactId, $this->_values, $participantID, $isTest);
-		
+
         //membersonlyevent
-		    $currentSession = CRM_Core_Session::singleton();
+        //TODO: maybe contribution_recur_id
+        $currentSession = CRM_Core_Session::singleton();
+        
+        $params = array(
+          'contact_id' => $currentSession->get('userID'),
+          'source' => 'Event purchase',
+          'num_terms' => 1
+        );
+        
+        $memberPrices = CRM_Membersonlyevent_BAO_EventMemberPrice::retrieve(array('event_id' => $this->_eventId));
+        $memberItems = array();
+        foreach ($memberPrices as $key => $value) {
+          $memberItems[$value->price_value_id] = $value->membership_type_id;
+        }
+        
+        $action = CRM_Core_Action::ADD;
+        // we need user id during add mode
+        $ids = array ();
+        if (!empty($params['contact_id'])) {
+          $ids['userId'] = $params['contact_id'];
+        }
+        //for edit membership id should be present (if needed)
+        if (!empty($params['id'])) {
+          $ids['membership'] = $params['id'];
+          $action = CRM_Core_Action::UPDATE;
+        }
+        //need to pass action to handle related memberships.
+        $params['action'] = $action;
+        
+        if (empty($params['id']) || !empty($params['num_terms'])) {
+          if (empty($params['id'])) {
+            $calcDates = CRM_Member_BAO_MembershipType::getDatesForMembershipType(
+              $params['membership_type_id'],
+              CRM_Utils_Array::value('join_date', $params),
+              CRM_Utils_Array::value('start_date', $params),
+              CRM_Utils_Array::value('end_date', $params),
+              CRM_Utils_Array::value('num_terms', $params, 1)
+            );
+          }
+          else {
+            $calcDates = CRM_Member_BAO_MembershipType::getRenewalDatesForMembershipType(
+              $params['id'],
+              NULL,
+              CRM_Utils_Array::value('membership_type_id', $params),
+              $params['num_terms']
+            );
+          }
+          foreach (array('join_date', 'start_date', 'end_date') as $date) {
+            if (empty($params[$date]) && isset($calcDates[$date])) {
+              $params[$date] = $calcDates[$date];
+            }
+          }
+        }
+        
+
+        foreach ($this->_lineItem as $key => $value) {
+          foreach ($value as $id => $item) {
+            if(key_exists($id, $memberItems)){
+              $params['membership_type_id'] = $memberItems[$id];
+              $membershipBAO = CRM_Member_BAO_Membership::create($params, $ids, TRUE);
+            }
+          }
+        }
 		    $currentSession->set('paid_membership', 1);
       }
     }

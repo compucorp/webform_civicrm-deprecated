@@ -50,9 +50,24 @@
   
   <script type="text/javascript">
   {literal}
+  	cj("input[id^='price_value_selectitem_']").bind('input', function(e) {
+  		var inputId = parseInt(cj(this).attr("id").substr(-1))+1;
+  		if(cj(this).val()){
+  			cj(this).prop('disabled', false);
+  			cj("select[id^='membership_type_selectitem_"+inputId+"']").prop('disabled', false);;
+  			cj("#"+cj(this).attr("id")+"_div").show();
+  		}else{
+  			cj(this).prop('disabled', true);
+  			cj("select[id^='membership_type_selectitem_"+inputId+"']").prop('disabled', true);;
+  			cj("#"+cj(this).attr("id")+"_div").hide();
+  		}
+	});
+
     cj(document).ready(function(){
       cj("input[id^='price_value_selectitem_']").hide();
-      priceMemberMatch();
+
+      var priceFieldId = cj("#price_field_id").find(":selected").val();
+      priceMemberMatch(priceFieldId);
       cj("#is_members_only_event_div input[type=checkbox]").click(function(){
         
         cj("#price_field_id").toggleClass( "required");
@@ -72,26 +87,16 @@
       }
       
     });
-    
-    function priceMemberMatch(){
 
-      cj("input[id^='price_value_selectitem_']").bind('input', function(e) {
-      		var inputId = parseInt(cj(this).attr("id").substr(-1))+1;
-      		if(cj(this).val()){
-      			cj(this).removeAttr('disabled');
-      			cj("select[id^='membership_type_selectitem_"+inputId+"']").removeAttr('disabled');
-      			cj("#"+cj(this).attr("id")+"_div").show();
-      		}else{
-      			cj(this).attr('disabled', 'disabled');
-      			cj("select[id^='membership_type_selectitem_"+inputId+"']").attr('disabled', 'disabled');
-      			cj("#"+cj(this).attr("id")+"_div").hide();
-      		}
-	  });
+    cj("#price_field_id").on('change', function(e) {
+    	var priceFieldId = e.target.options[e.target.selectedIndex].value;
+    	cj("select[id^='membership_type_selectitem_']").val("");
+    	priceMemberMatch(priceFieldId);
+    });
 
-      cj("#price_field_id").on('change', function(e) {
+    function priceMemberMatch(priceFieldId){
         cj("input[id^='price_value_selectitem_']").val("").trigger('input');
-        cj("select[id^='membership_type_selectitem_']").val("");
-        var priceFieldId = e.target.options[e.target.selectedIndex].value;
+
         var count = 0;
         var priceValueSet=0;
         
@@ -103,12 +108,11 @@
         
         cj.each(priceValueSet,function(index, value){
           cj("label[for='price_value_selectitem_"+count+"']").text(value["label"]);
-          cj("input[id^='price_value_selectitem_"+count+"']").val(index).trigger('input');
+          cj("input[id^='price_value_selectitem_"+count+"']").val(value["id"]).trigger('input');
           count+=2;
         });
-
-      });
     }
+
   {/literal}
   </script>
     
