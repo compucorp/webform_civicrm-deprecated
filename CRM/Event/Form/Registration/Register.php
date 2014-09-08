@@ -265,48 +265,56 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
     }
 	
   	//membersonlyevent
-  	$currentSession = CRM_Core_Session::singleton();
-  	$paidMembership = $currentSession->get('paid_membership');
-    $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($this->_eventId);
-  	$membershipField = $members_only_event->price_field_id;
+    $currentSession = CRM_Core_Session::singleton();
+    $members_only_event = $this->_isMembersOnlyEvent;
     
-  	if(!$paidMembership||is_null($paidMembership)){
-  	  
-  		$membershipValue = $currentSession->get('membership_price_field_value_id');
+    if($members_only_event){
+    	$paidMembership = $currentSession->get('paid_membership');
+      $members_only_event = $this->_isMembersOnlyEvent;
+    	$membershipField = $members_only_event->price_field_id;
       
-      $this->assign('paidMembership', $paidMembership);
-  	
-  		if ($this->_priceSetId && !empty($this->_feeBlock)) {
-        	foreach ($this->_feeBlock as $key => $val) {
-          	foreach ($val['options'] as $keys => $values) {
-  	      		if($key==$membershipField&&$keys==$membershipValue){
-              	if ($val['html_type'] == 'CheckBox') {
-                	$this->_defaults["price_{$key}"][$keys] = 1;
-              	}else{
-                	$this->_defaults["price_{$key}"] = $keys;
-              	}
-  		  		  }
+      $defaults = $params = array('id' => $membershipField);
+      $membershipFieldName = CRM_Price_BAO_PriceField::retrieve($params, $defaults);
+      $this->assign('sectionName', $membershipFieldName->name."-section");
+      
+    	if(!$paidMembership||is_null($paidMembership)){
+    	  
+    		$membershipValue = $currentSession->get('membership_price_field_value_id');
+        
+        $this->assign('paidMembership', $paidMembership);
+    	
+    		if ($this->_priceSetId && !empty($this->_feeBlock)) {
+          	foreach ($this->_feeBlock as $key => $val) {
+            	foreach ($val['options'] as $keys => $values) {
+    	      		if($key==$membershipField&&$keys==$membershipValue){
+                	if ($val['html_type'] == 'CheckBox') {
+                  	$this->_defaults["price_{$key}"][$keys] = 1;
+                	}else{
+                  	$this->_defaults["price_{$key}"] = $keys;
+                	}
+    		  		  }
+            	}
           	}
         	}
-      	}
-  	}else{
-  	  $this->assign('paidMembership', 1);
-  	}
-    
-    if(is_numeric($membershipField)){
-      $this->assign('membershipField', 'price_'.$membershipField);
-    }
-	
-    if ($this->_priceSetId && !empty($this->_feeBlock)) {
-      foreach ($this->_feeBlock as $key => $val) {
-        foreach ($val['options'] as $keys => $values) {
-          if ($values['is_default'] && empty($values['is_full'])) {
-
-            if ($val['html_type'] == 'CheckBox') {
-              $this->_defaults["price_{$key}"][$keys] = 1;
-            }
-            else {
-              $this->_defaults["price_{$key}"] = $keys;
+    	}else{
+    	  $this->assign('paidMembership', 1);
+    	}
+      
+      if(is_numeric($membershipField)){
+        $this->assign('membershipField', 'price_'.$membershipField);
+      }
+  	
+      if ($this->_priceSetId && !empty($this->_feeBlock)) {
+        foreach ($this->_feeBlock as $key => $val) {
+          foreach ($val['options'] as $keys => $values) {
+            if ($values['is_default'] && empty($values['is_full'])) {
+  
+              if ($val['html_type'] == 'CheckBox') {
+                $this->_defaults["price_{$key}"][$keys] = 1;
+              }
+              else {
+                $this->_defaults["price_{$key}"] = $keys;
+              }
             }
           }
         }
@@ -1008,27 +1016,30 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
     
     //membersonlyevent
     $currentSession = CRM_Core_Session::singleton();
-    $paidMembership = $currentSession->get('paid_membership');
+    $members_only_event = $this->_isMembersOnlyEvent;
     
-    if(!$paidMembership||is_null($paidMembership)){
-      
-      $members_only_event = CRM_Membersonlyevent_BAO_MembersOnlyEvent::getMembersOnlyEvent($this->_eventId);
-      $membershipField = $members_only_event->price_field_id;
-      $membershipValue = $currentSession->get('membership_price_field_value_id');
-      
-      if ($this->_priceSetId && !empty($this->_feeBlock)) {
-          foreach ($this->_feeBlock as $key => $val) {
-            foreach ($val['options'] as $keys => $values) {
-              if($key==$membershipField&&$keys==$membershipValue){
-                if ($val['html_type'] == 'CheckBox') {
-                  $params["price_{$key}"][$keys] = 1;
-                }else{
-                  $params["price_{$key}"] = $keys;
+    if($members_only_event){
+      $paidMembership = $currentSession->get('paid_membership');
+    
+      if(!$paidMembership||is_null($paidMembership)){
+        
+        $membershipField = $members_only_event->price_field_id;
+        $membershipValue = $currentSession->get('membership_price_field_value_id');
+        
+        if ($this->_priceSetId && !empty($this->_feeBlock)) {
+            foreach ($this->_feeBlock as $key => $val) {
+              foreach ($val['options'] as $keys => $values) {
+                if($key==$membershipField&&$keys==$membershipValue){
+                  if ($val['html_type'] == 'CheckBox') {
+                    $params["price_{$key}"][$keys] = 1;
+                  }else{
+                    $params["price_{$key}"] = $keys;
+                  }
                 }
               }
             }
           }
-        }
+      }
     }
 
     //set as Primary participant

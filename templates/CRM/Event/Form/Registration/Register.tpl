@@ -361,17 +361,21 @@
   }
   {/literal}{/if}{literal}
   
-  //TODO: consider hide price fields
-  cj(document).ready(function(){
+  {/literal}{if $isMembersOnlyEvent == 1}{literal}console.log({/literal}{$isMembersOnlyEvent}{literal});
+	  cj(document).ready(function(){
+	  	{/literal}{if $isMember == 0}{literal}
+		  	{/literal}{if $paidMembership == 0 }{literal}
 
-  	{/literal}{if $paidMembership == 0 }{literal}
+		  		var priceFields = cj("[name^='{/literal}{ $membershipField }{literal}']");
+		  		priceFields.attr('disabled', 'disabled');
 
-  		var priceFields = cj("[name^='{/literal}{ $membershipField }{literal}']");
-  		priceFields.attr('disabled', 'disabled');
-
-  	{/literal}{/if}{literal}
-        
-  });
+		  	{/literal}{/if}{literal}
+	  	{/literal}{else}{literal}
+	  		cj("div.{/literal}{$sectionName }{literal}").hide();
+	  	{/literal}{/if}{literal}
+	        
+	  });
+  {/literal}{/if}{literal}
 
 </script>
 {/literal}
