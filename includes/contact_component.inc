@@ -851,6 +851,7 @@ function wf_crm_results_display_options($contact_type) {
     'nick_name' => t("Nick Name"),
     'id' => t("Contact ID"),
     'external_identifier' => t("External ID"),
+    'source' => t("Source"),
     'email' => t("Email"),
     'city' => t("City"),
     'county' => t("District/County"),

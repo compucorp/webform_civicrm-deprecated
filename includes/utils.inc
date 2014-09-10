@@ -553,6 +553,10 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('External ID'),
       'type' => 'hidden',
     );
+    $fields['contact_source'] = array(
+      'name' => t('Source'),
+      'type' => 'textfield',
+    );
     $fields['contact_cs'] = array(
       'name' => t('Checksum'),
       'type' => 'hidden',
