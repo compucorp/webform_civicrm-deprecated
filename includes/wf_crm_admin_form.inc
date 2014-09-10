@@ -86,7 +86,7 @@ class wf_crm_admin_form {
    */
   private function initializeForm() {
     $this->settings = isset($this->node->webform_civicrm) ? $this->node->webform_civicrm : $this->defaultSettings();
-    $this->data = &$this->settings['data'];dpm($this->settings);
+    $this->data = &$this->settings['data'];
     // Warn of incompatible modules
     $incompatibilities = array(
       'form_builder_webform' => t('Form builder Webform UI'),
@@ -1136,7 +1136,7 @@ class wf_crm_admin_form {
   public function postProcess() {
     $button = $this->form_state['clicked_button']['#id'];
     $nid = $this->node->nid;
-    $this->settings = wf_crm_aval($this->form_state, 'storage:vals', $this->form_state['values']);//dpm($this->form_state);
+    $this->settings = wf_crm_aval($this->form_state, 'storage:vals', $this->form_state['values']);
 
     if ((empty($this->node->webform_civicrm) && !$this->settings['nid']) || $button == 'edit-cancel') {
       $this->form_state['rebuild'] = TRUE;
