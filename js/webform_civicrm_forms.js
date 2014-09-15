@@ -39,10 +39,10 @@ var wfCivi = (function ($, D) {
       var params = getCids(nid);
       params.load = 'full';
       params.cid = cid;
-      $.get(path, params, function(data) {
+      $.getJSON(path, params, function(data) {
         fillValues(data, nid);
         $('.webform-client-form-'+nid).removeClass('contact-loading');
-      }, 'json');
+      });
     }
   };
 

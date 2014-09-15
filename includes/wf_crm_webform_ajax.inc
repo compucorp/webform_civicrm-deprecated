@@ -95,27 +95,42 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
           $this->id['cid'][$c] = (int) $_GET['cid'];
         }
         $contact = $this->loadContact($c, $component['extra']['hide_fields']);
-        // Flatten data into simple keys & values
+        $states = $countries = array();
+        // Format as json array
         foreach ($this->enabled as $fid => $f) {
           list(, $i, $ent, $n, $table, $field) = explode('_', $fid, 6);
           if ($i == $c && $ent == 'contact' && isset($contact[$table][$n][$field])) {
             $type = ($table == 'contact' && strpos($field, 'name')) ? 'name' : $table;
-            // Exclude blank and hidden fields to save bandwidth
+            // Exclude blank and hidden fields
             if ($contact[$table][$n][$field] !== '' && $contact[$table][$n][$field] !== array() && !in_array($type, $component['extra']['hide_fields'])) {
               $dataType = wf_crm_aval(wf_crm_get_field("{$table}_$field"), 'data_type');
-              $val = $contact[$table][$n][$field];
+              $val = array('val' => $contact[$table][$n][$field]);
               // Retrieve file info
               if ($dataType === 'File') {
-                $val = $this->getFileInfo($field, $val);
+                $val = $this->getFileInfo($field, $val['val']);
               }
               // Explode multivalue strings
-              elseif (is_string($val) && strpos($val, $sp) !== FALSE) {
-                $val = wf_crm_explode_multivalue_str($val);
+              elseif (is_string($val['val']) && strpos($val['val'], $sp) !== FALSE) {
+                $val['val'] = wf_crm_explode_multivalue_str($val['val']);
               }
-              $data[$fid] = $val;
+              $val['fid'] = $fid;
+              if ($dataType) {
+                $val['data_type'] = $dataType;
+              }
+              if ($field == 'state_province_id') {
+                $states[] = $val;
+              }
+              elseif ($field == 'country_id') {
+                $countries[] = $val;
+              }
+              else {
+                $data[] = $val;
+              }
             }
           }
         }
+        // We want counties, states and countries in that order to avoid race-conditions client-side
+        $data = array_merge($data, $states, $countries);
       }
     }
     drupal_json_output($data);
