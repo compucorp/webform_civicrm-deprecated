@@ -1254,9 +1254,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach ($this->line_items as &$item) {
 	  if (!is_null($this->taxRate)) {
 	  	$item['line_total'] = $item['unit_price'] * (int) $item['qty'];
-	  	$item['unit_price'] += ($this->taxRate / 100) * $item['unit_price'];
-		$item['tax_amount'] = ($this->taxRate / 100) * $item['line_total'];
-	  	$this->totalContribution += $item['unit_price'] * (int) $item['qty'];
+      $item['tax_amount'] = ($this->taxRate / 100) * $item['line_total'];
+      $this->totalContribution += (1 + $this->taxRate / 100) * $item['unit_price'] * (int) $item['qty'];
 	  }else{
 	  	$this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
 	  }

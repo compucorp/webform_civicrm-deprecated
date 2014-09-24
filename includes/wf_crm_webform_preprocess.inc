@@ -624,11 +624,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
 	  if (!is_null($this->taxRate)) {
 	  	// Change the line item label to display the tax rate it contains
 	  	$taxSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME,'contribution_invoice_settings');
-	  	$item['label'] .= ' (includes '.(int)$this->taxRate.'% '.$taxSettings['tax_term'].')';
+	  	$item['label'] .= ' (including '.(int)$this->taxRate.'% '.$taxSettings['tax_term'].')';
 		
 		// Add calculation for financial type that contains tax
 	  	$item['tax_amount'] = ($this->taxRate / 100) * $item['line_total'];
-	  	$item['unit_price'] = $item['unit_price'] * (($this->taxRate / 100) + 1);
 	  	$total += $item['line_total'] * (($this->taxRate / 100) + 1);
 		
 		$label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
