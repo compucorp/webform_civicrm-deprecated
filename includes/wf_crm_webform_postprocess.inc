@@ -1470,7 +1470,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function processContribution() {
     $contribution = $this->data['contribution'][1]['contribution'][1];
     $id = $this->id['contribution'];
-	
+
     // Save custom data
     if (count($this->data['contribution'][1]) > 1) {
       $this->saveCustomData($this->data['contribution'][1], $id, 'Contribution', FALSE);
@@ -1494,9 +1494,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         'honor_type_id' => $contribution['honor_type_id'],
       ));
     }
-	
+
 	$contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
-	
+
     // Save line-items
     foreach ($this->line_items as &$item) {
       if (empty($item['line_total'])) {
@@ -1510,7 +1510,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       $line_result = wf_civicrm_api('line_item', 'create', $item);
 	  $item['id'] = $line_result['id'];
-	  
+
 	  if(!is_null($this->taxRate)){
 	  	$lineItemRecord = json_decode(json_encode($item), FALSE);
 	  	// Add financial_item and entity_financial_trxn
@@ -1528,6 +1528,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Send receipt
     if (!empty($this->contribution_page['is_email_receipt'])) {
+      //guanhuan
+      if($this->taxRate){
+        $template = CRM_Core_Smarty::singleton();
+        $template->assign('dataArray', array( "{$this->taxRate}" => $this->taxRate/100 ));
+      }
       wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $id) + $this->contribution_page);
     }
   }
