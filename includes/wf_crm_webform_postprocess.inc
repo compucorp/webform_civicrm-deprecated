@@ -1529,7 +1529,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Send receipt
     if (!empty($this->contribution_page['is_email_receipt'])) {
       //guanhuan
-      if($this->taxRate){
+      if(!is_null($this->taxRate)){
         $template = CRM_Core_Smarty::singleton();
         $template->assign('dataArray', array( "{$this->taxRate}" => $this->taxRate/100 ));
       }
