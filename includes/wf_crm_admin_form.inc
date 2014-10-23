@@ -72,6 +72,9 @@ class wf_crm_admin_form {
     if (isset($this->sets['contribution'])) {
       $this->buildContributionTab();
     }
+    if (isset($this->sets['grant'])) {
+      $this->buildGrantTab();
+    }
     $this->buildOptionsTab();
 
     $this->form['actions']['submit'] = array(
@@ -386,10 +389,11 @@ class wf_crm_admin_form {
     $campaign_act_types = array();
     if ($case_types && !empty($this->data['case'][1]['case'][1]['case_type_id'])) {
       $case_type = $this->form['act']['case_type_id']['#default_value'] = $this->data['case'][1]['case'][1]['case_type_id'];
-      $case_type_name = $case_types[$case_type];
+      $case_type_names = wf_crm_apivalues('case', 'getoptions', array('field' => 'case_type_id', 'context' => 'validate'));
+      $case_type_name = $case_type_names[$case_type];
       $this->form['act']['case']['case_fields'] = array(
         '#type' => 'fieldset',
-        '#title' => $case_type_name . ' ' . t('Case'),
+        '#title' => $case_types[$case_type] . ' ' . t('Case'),
       );
       $this->form['act']['case']['case_fields']['existing_case_status'] = array(
         '#type' => 'select',
@@ -742,6 +746,60 @@ class wf_crm_admin_form {
   }
 
   /**
+   * Grant settings
+   */
+  private function buildGrantTab() {
+    $this->form['grant'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Grants'),
+      '#group' => 'webform_civicrm',
+      '#attributes' => array('class' => array('civi-icon-grant')),
+    );
+    $num = wf_crm_aval($this->data, "grant:number_of_grant", 0);
+    $this->form['grant']["grant_number_of_grant"] = array(
+      '#type' => 'select',
+      '#title' => t('Number of Grants'),
+      '#default_value' => $num,
+      '#options' => range(0, $this->sets['grant']['max_instances']),
+      '#prefix' => '<div class="number-of">',
+      '#suffix' => '</div>',
+    );
+    $this->addAjaxItem("grant", "grant_number_of_grant", "grant");
+    for ($n = 1; $n <= $num; ++$n) {
+      $fs = "grant_grant_{$n}_fieldset";
+      $this->form['grant']['grant'][$fs] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Grant !num', array('!num' => $n)),
+        '#attributes' => array('id' => $fs, 'class' => array('web-civi-checkbox-set')),
+        'js_select' => $this->addToggle($fs),
+      );
+      foreach ($this->sets['grant']['fields'] as $fid => $field) {
+        $fid = "civicrm_{$n}_grant_1_$fid";
+        $this->form['grant']['grant'][$fs][$fid] = $this->addItem($fid, $field);
+      }
+      $this->addAjaxItem("grant:grant:$fs", "civicrm_{$n}_grant_1_grant_grant_type_id", "custom");
+      foreach ($this->sets as $sid => $set) {
+        if ($set['entity_type'] == 'grant' && $sid != 'grant'
+          && (empty($this->data['grant'][$n]['grant'][1]['grant_type_id']) || empty($set['sub_types']) ||
+            in_array($this->data['grant'][$n]['grant'][1]['grant_type_id'], $set['sub_types']))
+        ) {
+          $fs1 = "grant_grant_{$n}_fieldset_$sid";
+          $this->form['grant']['grant'][$fs]['custom'][$fs1] = array(
+            '#type' => 'fieldset',
+            '#title' => $set['label'],
+            '#attributes' => array('id' => $fs1, 'class' => array('web-civi-checkbox-set')),
+            'js_select' => $this->addToggle($fs1),
+          );
+          foreach ($set['fields'] as $fid => $field) {
+            $fid = "civicrm_{$n}_grant_1_$fid";
+            $this->form['grant']['grant'][$fs]['custom'][$fs1][$fid] = $this->addItem($fid, $field);
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Configure additional options
    */
   private function buildOptionsTab() {
@@ -881,7 +939,7 @@ class wf_crm_admin_form {
       'civicrm_1_contact_1_contact_existing' => 'create_civicrm_webform_element',
     );
   }
-  
+
   /**
    * Build a field item for the admin form
    *
@@ -1022,7 +1080,7 @@ class wf_crm_admin_form {
     </div>',
     );
   }
-  
+
   /**
    * Build $this->data array for webform settings; called while rebuilding or post-processing the admin form.
    */
@@ -1075,6 +1133,9 @@ class wf_crm_admin_form {
         list($ent, $c, $k) = explode('_', $key, 3);
         if (isset($this->data[$ent][$c]) || $ent == 'participant' || $ent == 'membership') {
           $this->data[$ent][$c][$k] = $val;
+        }
+        elseif ($ent == 'grant') {
+          $this->data[$ent]["number_$k"] = $val;
         }
       }
     }
@@ -1410,7 +1471,7 @@ class wf_crm_admin_form {
       $field['value'] = $settings[$field['form_key']];
     }
     // Create fieldsets - for contact and contact-specific event fields only
-    if ($ent != 'activity' && $ent != 'case' && $ent != 'contribution'
+    if ($ent != 'activity' && $ent != 'case' && $ent != 'contribution' && $ent != 'grant'
       && ($ent != 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') == 'separate')) {
       self::addFieldset($c, $field, $enabled, $settings);
     }

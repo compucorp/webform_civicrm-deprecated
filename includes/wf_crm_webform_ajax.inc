@@ -8,7 +8,7 @@
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
 
 class wf_crm_webform_ajax extends wf_crm_webform_base {
-  
+
   function __construct() {
     civicrm_initialize();
   }
@@ -88,6 +88,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
         $sp = CRM_Core_DAO::VALUE_SEPARATOR;
         $this->enabled = wf_crm_enabled_fields($this->node);
         list(, $c, ) = explode('_', $component['form_key'], 3);
+        // Populate other contact ids for related data
         foreach ($_GET as $k => $v) {
           if (substr($k, 0, 3) == 'cid' && $v && is_numeric($v)) {
             $this->id['cid'][substr($k, 3)] = (int) $v;
