@@ -560,14 +560,3 @@ function _webform_civicrm_status() {
   
   return $status;
 }
-
-/**
- * Implements hook_webform_component_defaults_alter().
- *
- * @see hook_webform_component_info_alter()
- */
-function webform_civicrm_webform_component_defaults_alter(&$defaults, $type) {
-  if($type == 'postal_code') {
-    $defaults['mandatory'] = 1;
-  }
-}
