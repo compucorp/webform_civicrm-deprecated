@@ -1,0 +1,1 @@
+<xi:include href="CRM/Membersonlyevent/files.xml"              parse="xml" />
