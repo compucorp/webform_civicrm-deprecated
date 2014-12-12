@@ -145,7 +145,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         // For the sake of simple logging
         CRM_Core_Session::singleton()->set('userID', (int) $this->id['cid'][1]);
         // For the sake of advanced logging
-        CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($this->id['cid'][1], 'Integer')));
+        CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(
+            1 => array(
+              $this->id['cid'][1],
+              'Integer'
+            )
+          ));
       }
     }
     // $this->id['cid'] will now contain all contact ids in order, with 0 as a placeholder for any contact not saved
@@ -164,7 +169,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (!($cid = $this->id['cid'][$c])) {
         continue;
       }
-      $this->saveCurrentEmployer($contact, $cid);
+      if (empty($this->shared_address)) {
+        $this->saveCurrentEmployer($contact, $cid);
+      }
 
       $this->saveCustomData($contact, $cid, 'Contact', !empty($this->existing_contacts[$c]));
 
@@ -217,7 +224,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       // Process activity
       if (!empty($this->data['activity'][1]['activity'])) {
-       $this->processActivity();
+        $this->processActivity();
         if (!empty($this->id['act'][1])) {
           $record['activity_id'] = $this->id['act'][1];
         }
@@ -242,8 +249,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $errors = form_get_errors();
     foreach ((array) $errors as $key => $error) {
       $pieces = wf_crm_explode_key(substr($key, strrpos($key, '][') + 2));
-      if($pieces) {
-        list( , $c, $ent, $n, $table, $name) = $pieces;
+      if ($pieces) {
+        list(, $c, $ent, $n, $table, $name) = $pieces;
         if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
           $this->unsetError($key);
         }
@@ -272,7 +279,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         if (!empty($element['#civicrm_data_type'])
           && substr(wf_crm_aval($element, '#type', ''), 0, 4) === 'text'
           && isset($element['#value'])
-          && $element['#value'] !== '') {
+          && $element['#value'] !== ''
+        ) {
           $dt = $element['#civicrm_data_type'];
           // Validate state/prov abbreviation
           if ($dt == 'state_province_abbr') {
@@ -287,12 +295,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $states = wf_crm_get_states($country_id);
             if ($states && !array_key_exists(strtoupper($element['#value']), $states)) {
               $countries = wf_crm_apivalues('address', 'getoptions', array('field' => 'country_id'));
-              form_error($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', array('@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title'])));
+              form_error($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', array(
+                    '@state' => $element['#value'],
+                    '%country' => $countries[$country_id],
+                    '%field' => $element['#title']
+                  )));
             }
           }
           // Strings and files don't need any validation
           elseif ($dt !== 'String' && $dt !== 'Memo' && $dt !== 'File'
-            && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
+            && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL
+          ) {
             // Allow data type names to be translated
             switch ($dt) {
               case 'Int':
@@ -308,7 +321,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 $dt = t('a currency value');
                 break;
             }
-            form_error($element, t('Please enter @type for %field.', array('@type' => $dt, '%field' => $element['#title'])));
+            form_error($element, t('Please enter @type for %field.', array(
+                  '@type' => $dt,
+                  '%field' => $element['#title']
+                )));
           }
         }
       }
@@ -418,8 +434,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (!$this->multiPageDataLoaded) {
       $this->multiPageDataLoaded = TRUE;
       if (!empty($this->form_state['storage']['submitted'])
-        && wf_crm_aval($this->form_state, 'storage:page_num', 1) > 1)
-      {
+        && wf_crm_aval($this->form_state, 'storage:page_num', 1) > 1
+      ) {
         $this->rawValues += $this->form_state['storage']['submitted'];
         $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
       }
@@ -461,7 +477,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function getExistingContactIds() {
     foreach ($this->enabled as $field_key => $fid) {
       if (substr($field_key, -8) == 'existing') {
-        list(, $c, ) = explode('_', $field_key, 3);
+        list(, $c,) = explode('_', $field_key, 3);
         $cid = wf_crm_aval($this->submissionValue($fid), 0);
         $this->id['cid'][$c] = $this->verifyExistingContact($cid, $field_key);
       }
@@ -525,13 +541,22 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           // Else look up the master contact's address
           elseif (!empty($this->existing_contacts[$m])) {
             $masters = wf_civicrm_api('address', 'get',
-              array('contact_id' => $this->id['cid'][$m], 'sort' => 'is_primary DESC'));
+              array(
+                'contact_id' => $this->id['cid'][$m],
+                'sort' => 'is_primary DESC'
+              ));
             if (!empty($masters['values'])) {
               $params['civicrm_address'] = array_shift($masters['values']);
             }
           }
         }
-        elseif (in_array($table, array('contact', 'address', 'email', 'phone', 'website'))) {
+        elseif (in_array($table, array(
+            'contact',
+            'address',
+            'email',
+            'phone',
+            'website'
+          ))) {
           $params['civicrm_' . $table] = $field[1];
         }
       }
@@ -553,7 +578,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['contact_type'] = ucfirst($params['contact_type']);
     unset($params['contact_id'], $params['id']);
     //guanhuan
-    if(!isset($params['source'])){
+    if (!isset($params['source'])) {
       $params['source'] = $this->settings['new_contact_source'];
     }
     // If creating individual with no first/last name,
@@ -609,10 +634,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @param int $cid
    */
   function saveCurrentEmployer($contact, $cid) {
-    if ($contact['contact'][1]['contact_type'] == 'individual' && !empty($contact['contact'][1]['employer_id'])) {
+    if ($contact['contact'][1]['contact_type'] == 'individual' && $this->data['contact'][2]['contact'][1]['contact_type'] == 'organization') {
       wf_civicrm_api('contact', 'create', array(
         'id' => $cid,
-        'employer_id' => $contact['contact'][1]['employer_id'],
+        'employer_id' => $this->id['cid'][2],
       ));
     }
   }
@@ -631,7 +656,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $this->submissionValue($this->enabled[$fid . 'existing'], $cid);
     }
     if (!empty($this->enabled[$fid . 'external_identifier']) && !empty($this->existing_contacts[$c])) {
-      $exid = wf_civicrm_api('contact', 'get', array('contact_id' => $cid, 'return.external_identifier' => 1));
+      $exid = wf_civicrm_api('contact', 'get', array(
+          'contact_id' => $cid,
+          'return.external_identifier' => 1
+        ));
       $this->submissionValue($this->enabled[$fid . 'external_identifier'], wf_crm_aval($exid, "values:$cid:external_identifier"));
     }
     if (!empty($this->enabled[$fid . 'cs'])) {
@@ -811,7 +839,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // Prepare for sending subscription confirmations
       if ($data_type == 'group' && !empty($this->settings['confirm_subscription'])) {
         // Retrieve this contact's primary email address and perform error-checking
-        $result = wf_civicrm_api('email', 'get', array('contact_id' => $id, 'options' => array('sort' => 'is_primary DESC')));
+        $result = wf_civicrm_api('email', 'get', array(
+            'contact_id' => $id,
+            'options' => array('sort' => 'is_primary DESC')
+          ));
         if (!empty($result['values'])) {
           foreach ($result['values'] as $value) {
             if (($value['is_primary'] || empty($email)) && strpos($value['email'], '@')) {
@@ -823,7 +854,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             'email' => $email,
           );
           if (empty($mailing_lists)) {
-            $mailing_lists = wf_crm_apivalues('group', 'get', array('visibility' => 'Public Pages', 'group_type' => 2), 'title');
+            $mailing_lists = wf_crm_apivalues('group', 'get', array(
+                'visibility' => 'Public Pages',
+                'group_type' => 2
+              ), 'title');
           }
         }
       }
@@ -843,7 +877,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
       if ($confirmations_sent) {
-        drupal_set_message(t('A message has been sent to %email to confirm subscription to !group.', array('%email' => $email, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $confirmations_sent) . '</em>')));
+        drupal_set_message(t('A message has been sent to %email to confirm subscription to !group.', array(
+              '%email' => $email,
+              '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $confirmations_sent) . '</em>'
+            )));
       }
     }
     // Remove data from entity
@@ -852,9 +889,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       wf_civicrm_api($api, 'delete', $params);
     }
     if (!empty($remove) && $data_type == 'group') {
-      $display_name = wf_civicrm_api('contact', 'get', array('contact_id' => $id, 'return.display_name' => 1));
+      $display_name = wf_civicrm_api('contact', 'get', array(
+          'contact_id' => $id,
+          'return.display_name' => 1
+        ));
       $display_name = wf_crm_aval($display_name, "values:$id:display_name", t('Contact'));
-      drupal_set_message(t('%contact has been removed from !group.', array('%contact' => $display_name, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $remove) . '</em>')));
+      drupal_set_message(t('%contact has been removed from !group.', array(
+            '%contact' => $display_name,
+            '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $remove) . '</em>'
+          )));
     }
   }
 
@@ -947,9 +990,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               }
               else {
                 //guanhuan
-                if(isset($this->data['contact'][$c]['contact'][1]['source'])){
+                if (isset($this->data['contact'][$c]['contact'][1]['source'])) {
                   $params['source'] = $this->data['contact'][$c]['contact'][1]['source'];
-                }else{
+                }
+                else {
                   $params['source'] = $this->settings['new_contact_source'];
                 }
                 if ($c > 1 && !empty($registered_by_id[$e][$i])) {
@@ -990,7 +1034,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
         foreach ($remove as $eid => $title) {
-          wf_civicrm_api('participant', 'create', array('status_id' => "Cancelled", 'id' => $existing[$eid]));
+          wf_civicrm_api('participant', 'create', array(
+              'status_id' => "Cancelled",
+              'id' => $existing[$eid]
+            ));
           drupal_set_message(t('Registration cancelled for !event', array('!event' => $title)));
         }
       }
@@ -1030,9 +1077,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       if (empty($params['id'])) {
         //guanhuan
-        if(isset($this->data['contact'][$c]['contact'][1]['source'])){
+        if (isset($this->data['contact'][$c]['contact'][1]['source'])) {
           $params['source'] = $this->data['contact'][$c]['contact'][1]['source'];
-        }else{
+        }
+        else {
           $params['source'] = $this->settings['new_contact_source'];
         }
       }
@@ -1070,7 +1118,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach ($this->shared_address as $cid => $shared) {
       foreach ($shared as $i => $addr) {
         if (!empty($this->id['cid'][$addr['mc']])) {
-          $masters = wf_civicrm_api('address', 'get', array('contact_id' => $this->id['cid'][$addr['mc']], 'options' => array('sort' => 'is_primary DESC')));
+          $masters = wf_civicrm_api('address', 'get', array(
+              'contact_id' => $this->id['cid'][$addr['mc']],
+              'options' => array('sort' => 'is_primary DESC')
+            ));
           if (!empty($masters['values'])) {
             $masters = array_values($masters['values']);
             // Pick the address with the same location type; default to primary.
@@ -1182,10 +1233,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $params['details'] .= drupal_render($renderable);
     }
     if (!empty($this->data['activity'][1]['details']['view_link'])) {
-      $params['details'] .= '<p>' . l(t('View Webform Submission'), 'node/' . $this->node->nid . '/submission/' . $this->submission->sid, array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
+      $params['details'] .= '<p>' . l(t('View Webform Submission'), 'node/' . $this->node->nid . '/submission/' . $this->submission->sid, array(
+            'absolute' => TRUE,
+            'alias' => TRUE
+          )) . '</p>';
     }
     if (!empty($this->data['activity'][1]['details']['edit_link'])) {
-      $params['details'] .= '<p>' . l(t('Edit Submission'), 'node/' . $this->node->nid . '/submission/' . $this->submission->sid . '/edit',  array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
+      $params['details'] .= '<p>' . l(t('Edit Submission'), 'node/' . $this->node->nid . '/submission/' . $this->submission->sid . '/edit', array(
+            'absolute' => TRUE,
+            'alias' => TRUE
+          )) . '</p>';
     }
     if (empty($params['campaign_id']) || empty($this->all_fields['activity_campaign_id'])) {
       unset($params['campaign_id']);
@@ -1255,14 +1312,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Calculate totals
     $this->totalContribution = 0;
     foreach ($this->line_items as &$item) {
-	  if (!is_null($this->taxRate)) {
-	  	$item['line_total'] = $item['unit_price'] * (int) $item['qty'];
-      $item['tax_amount'] = ($this->taxRate / 100) * $item['line_total'];
-      $this->totalContribution += (1 + $this->taxRate / 100) * $item['unit_price'] * (int) $item['qty'];
-	  }else{
-	  	$this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
-	  }
-	}
+      if (!is_null($this->taxRate)) {
+        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+        $item['tax_amount'] = ($this->taxRate / 100) * $item['line_total'];
+        $this->totalContribution += (1 + $this->taxRate / 100) * $item['unit_price'] * (int) $item['qty'];
+      }
+      else {
+        $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+      }
+    }
     return $this->totalContribution;
   }
 
@@ -1274,7 +1332,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $page = wf_crm_aval($this->form_state, 'storage:page_num', 1);
     $field = $this->getComponent('civicrm_1_contribution_1_contribution_contribution_page_id');
     return $page == $field['page_num'] &&
-      !empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
+    !empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
   }
 
   /**
@@ -1318,7 +1376,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Validate state/province
     if (!empty($params['country_id'])) {
-      $states = wf_crm_apivalues('address', 'getoptions', array('field' => 'state_province_id', 'country_id' => $params['country_id']));
+      $states = wf_crm_apivalues('address', 'getoptions', array(
+          'field' => 'state_province_id',
+          'country_id' => $params['country_id']
+        ));
       if ($states && (empty($params['state_province_id']) || !isset($states[$params['state_province_id']]))) {
         form_set_error('billing_state_province_id-5', t('!name field is required.', array('!name' => check_plain(ts('State/Province')))));
         $valid = FALSE;
@@ -1454,19 +1515,20 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->id['cid'][1];
     //guanhuan
-    if(isset($this->data['contact'][1]['contact'][1]['source'])){
+    if (isset($this->data['contact'][1]['contact'][1]['source'])) {
       $params['source'] = $this->data['contact'][1]['contact'][1]['source'];
-    }else{
+    }
+    else {
       $params['source'] = $this->settings['new_contact_source'];
     }
     $params['total_amount'] = $this->totalContribution;
-	// TODO: needs review
-	if (!is_null($this->taxRate)) {
-		$params['non_deductible_amount']  = $this->totalContribution;
-		$params['tax_amount'] = ($params['total_amount'] / ($this->taxRate + 100)) * $this->taxRate;
-	}
+    // TODO: needs review
+    if (!is_null($this->taxRate)) {
+      $params['non_deductible_amount'] = $this->totalContribution;
+      $params['tax_amount'] = ($params['total_amount'] / ($this->taxRate + 100)) * $this->taxRate;
+    }
 
-  // pass all submitted values to payment processor
+    // pass all submitted values to payment processor
     foreach ($_POST as $key => $value) {
       if (empty($params[$key])) {
         $params[$key] = $value;
@@ -1509,7 +1571,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       ));
     }
 
-	$contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
+    $contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
 
     // Save line-items
     foreach ($this->line_items as &$item) {
@@ -1519,18 +1581,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (empty($item['entity_id'])) {
         $item['entity_id'] = $id;
       }
-	  if (empty($item['contribution_id'])) {
+      if (empty($item['contribution_id'])) {
         $item['contribution_id'] = $id;
       }
       $line_result = wf_civicrm_api('line_item', 'create', $item);
-	  $item['id'] = $line_result['id'];
+      $item['id'] = $line_result['id'];
 
-	  if(!is_null($this->taxRate)){
-	  	$lineItemRecord = json_decode(json_encode($item), FALSE);
-	  	// Add financial_item and entity_financial_trxn
-	  	$result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);
-		$result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, TRUE);
-	  }
+      if (!is_null($this->taxRate)) {
+        $lineItemRecord = json_decode(json_encode($item), FALSE);
+        // Add financial_item and entity_financial_trxn
+        $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);
+        $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, TRUE);
+      }
       // Create participant/membership payment records
       if (isset($item['membership_id']) || isset($item['participant_id'])) {
         $type = isset($item['participant_id']) ? 'participant' : 'membership';
@@ -1543,9 +1605,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Send receipt
     if (!empty($this->contribution_page['is_email_receipt'])) {
       //guanhuan
-      if(!is_null($this->taxRate)){
+      if (!is_null($this->taxRate)) {
         $template = CRM_Core_Smarty::singleton();
-        $template->assign('dataArray', array( "{$this->taxRate}" => $this->taxRate/100 ));
+        $template->assign('dataArray', array("{$this->taxRate}" => $this->taxRate / 100));
       }
       wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $id) + $this->contribution_page);
     }
@@ -1661,7 +1723,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach ($this->enabled as $field_key => $fid) {
       $val = $this->submissionValue($fid);
       if ($val !== FALSE) {
-        list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
+        list(, $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
         // Fieldsets and existing contact fields are not strictly CiviCRM fields, so ignore
         if ($name === 'existing' || $name === 'fieldset') {
           continue;
@@ -1761,7 +1823,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return bool
    */
   private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name) {
-    if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
+    if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"]) && $name != 'existing') {
       $component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
       $existing_contact_val = $this->submissionValue($component['cid']);
       // Fields are hidden if value is empty (no selection) or a numeric contact id
@@ -1785,11 +1847,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     switch ($location) {
       case 'address':
         return empty($params['street_address'])
-          && empty($params['city'])
-          && empty($params['state_province_id'])
-          && empty($params['country_id'])
-          && empty($params['postal_code'])
-          && (empty($params['master_id']) || $params['master_id'] == 'null');
+        && empty($params['city'])
+        && empty($params['state_province_id'])
+        && empty($params['country_id'])
+        && empty($params['postal_code'])
+        && (empty($params['master_id']) || $params['master_id'] == 'null');
       case 'website':
         return empty($params['url']);
       case 'im':

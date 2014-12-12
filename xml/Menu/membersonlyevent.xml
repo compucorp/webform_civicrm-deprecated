@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/event/manage/membersonlyevent</path>
+    <page_callback>CRM_Membersonlyevent_Form_ManageEvent_MembersOnlyEvent</page_callback>
+    <title>MembersOnlyEvent</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/admin/setting/preferences/members_event_config</path>
+    <page_callback>CRM_Membersonlyevent_Form_MembersEventConfig</page_callback>
+    <title>MembersEventConfig</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/event/register/member</path>
+    <page_callback>CRM_Event_Form_Registration_EventMemberSelect</page_callback>
+    <title>EventMemberSelect</title>
+    <access_arguments>register for events</access_arguments>
+  </item>
+</menu>

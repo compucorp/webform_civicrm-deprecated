@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Membersonlyevent</base>
+  <class>MembersOnlyEvent</class>
+  <name>civicrm_membersonlyevent</name>
+  <comment>Members Only Event entity settings table</comment>
+  <add>4.4</add>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique Members Only Event ID</comment>
+    <add>4.4</add>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>event_id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Foreign key for the Event</comment>
+    <add>4.4</add>
+  </field>
+  <foreignKey>
+    <name>event_id</name>
+    <table>civicrm_event</table>
+    <key>id</key>
+    <add>4.4</add>
+    <onDelete>CASCADE</onDelete>
+  </foreignKey>
+  
+  <field>
+    <name>price_field_id</name>
+    <type>int unsigned</type>
+    <comment>Foreign key for the Price field id</comment>
+    <add>4.4</add>
+  </field>
+  <foreignKey>
+    <name>price_field_id</name>
+    <table>civicrm_price_field</table>
+    <key>id</key>
+    <add>4.4</add>
+    <onDelete>SET NULL</onDelete>
+  </foreignKey>
+  
+  <field>
+    <name>is_members_only_event</name>
+    <type>boolean</type>
+    <title>Is Members Only Event</title>
+    <default>0</default>
+    <comment>If this box is ticked only the users with permission &quot;Can register for Members only events&quot; will be able to register for this event.</comment>
+    <add>1.7</add>
+    <html>
+      <type>CheckBox</type>
+    </html>
+  </field>
+
+</table>
