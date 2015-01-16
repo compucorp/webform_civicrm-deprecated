@@ -164,7 +164,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (!($cid = $this->id['cid'][$c])) {
         continue;
       }
-      $this->saveCurrentEmployer($contact, $cid);
+
+      if (empty($this->shared_address)) {
+        $this->saveCurrentEmployer($contact, $cid);
+      }
 
       $this->saveCustomData($contact, $cid, 'Contact', !empty($this->existing_contacts[$c]));
 
@@ -609,10 +612,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @param int $cid
    */
   function saveCurrentEmployer($contact, $cid) {
-    if ($contact['contact'][1]['contact_type'] == 'individual' && !empty($contact['contact'][1]['employer_id'])) {
+    if ($contact['contact'][1]['contact_type'] == 'individual' && $this->data['contact'][2]['contact'][1]['contact_type'] == 'organization') {
       wf_civicrm_api('contact', 'create', array(
         'id' => $cid,
-        'employer_id' => $contact['contact'][1]['employer_id'],
+        'employer_id' => $this->id['cid'][2],
       ));
     }
   }
@@ -1761,7 +1764,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return bool
    */
   private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name) {
-    if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
+    if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"]) && $name != 'existing') {
       $component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
       $existing_contact_val = $this->submissionValue($component['cid']);
       // Fields are hidden if value is empty (no selection) or a numeric contact id
